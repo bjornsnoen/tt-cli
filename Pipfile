@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+click = "*"
+beautifulsoup4 = "*"
+html5lib = "*"
+python-dotenv = "*"
+tt-cli = {editable = true, path = "."}
+
+[dev-packages]
+black = "*"
+isort = "*"
+pipenv-setup = "*"
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
