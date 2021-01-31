@@ -1,4 +1,5 @@
-from abc import ABC
+from abc import ABC, ABCMeta, abstractmethod
+from datetime import date
 from time import time
 
 from requests import Session
@@ -8,7 +9,7 @@ def cachebust():
     return time() * 1000
 
 
-class ApiClient(ABC):
+class ApiClient(ABC, metaclass=ABCMeta):
     def __init__(self, client: Session, base_url: str):
         self.client = client
         self.base_url = base_url
@@ -24,3 +25,13 @@ class ApiClient(ABC):
 
     def endpoint(self, path) -> str:
         return "{base_url}/{path}".format(base_url=self.base_url, path=path.lstrip("/"))
+
+    @abstractmethod
+    def write_hours(
+        self, hours: float, description: str, date: date = date.today()
+    ) -> dict:
+        pass
+
+    @abstractmethod
+    def lock_day(self, day: date = date.today()):
+        pass

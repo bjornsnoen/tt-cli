@@ -104,11 +104,10 @@ class Severa(ApiClient):
             "isModifiable": True,
         }
 
-        result = loads(self.api_post(
-            "/workhours", get_params={"_": cachebust()}, post_params=body
-        ))
+        result = loads(
+            self.api_post("/workhours", get_params={"_": cachebust()}, post_params=body)
+        )
         return result
-
 
     def get_projects(self) -> dict:
         endpoint = "/users/{guid}/phasetreephases".format(
