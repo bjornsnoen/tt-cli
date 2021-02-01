@@ -86,16 +86,19 @@ class Severa(ApiClient):
         self, hours: float, description: str, date: date = date.today()
     ) -> dict:
         possible_projects = self.get_projects()
-        nav = possible_projects[0]
-        phases = self.get_phases(nav)
-        bistand = phases[0]
+        first_project = possible_projects[0]
+        phases = self.get_phases(first_project)
+        first_phase_of_first_project = phases[0]
 
         body = {
             "guid": None,
-            "workType": nav["defaultWorkType"],
-            "phase": {"guid": bistand["guid"], "name": bistand["name"]},
-            "customer": nav["customer"],
-            "project": nav["project"],
+            "workType": first_project["defaultWorkType"],
+            "phase": {
+                "guid": first_phase_of_first_project["guid"],
+                "name": first_phase_of_first_project["name"],
+            },
+            "customer": first_project["customer"],
+            "project": first_project["project"],
             "user": {"guid": self.login["user"]["guid"]},
             "overtime": None,
             "description": description,
