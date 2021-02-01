@@ -10,6 +10,7 @@ setup(
         "certifi==2020.12.5",
         "chardet==4.0.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
         "click==7.1.2",
+        "click-help-colors==0.9",
         "html5lib==1.1",
         "idna==2.10; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
         "python-dotenv==0.15.0",
@@ -22,5 +23,6 @@ setup(
     entry_points="""
         [console_scripts]
         tt-cli=ttcli.main:cli
+        tt-a=ttcli.main:write_to_all
     """,
 )
