@@ -1,17 +1,22 @@
 from base64 import b64encode
 from datetime import date, datetime, timedelta
 from json import dumps, loads
-from os import getenv
+from os import environ, getenv
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from requests import Session
 
-from ttcli.ApiClient import ApiClient
+from ttcli.ApiClient import ApiClient, ConfigurationException
+
+TT_ETOKEN_ENV_KEY = "TRIPLETEX_EMPLOYEE_TOKEN"
+TT_CTOKEN_ENV_KEY = "TRIPLETEX_CONSUMER_TOKEN"
+TT_DEFAULT_ACTIVITY_ID_KEY = "TRIPLETEX_DEFAULT_ACTIVITY_ID"
 
 
 class TripleTex(ApiClient):
     def __init__(self):
+        self.raise_configuration_exception()
         super(TripleTex, self).__init__(
             name="TripleTex", client=Session(), base_url="https://api.tripletex.io/v2/"
         )
@@ -26,8 +31,8 @@ class TripleTex(ApiClient):
         result = self.client.put(
             self.endpoint("/token/session/:create"),
             params={
-                "consumerToken": getenv("TRIPLETEX_CONSUMER_TOKEN"),
-                "employeeToken": getenv("TRIPLETEX_EMPLOYEE_TOKEN"),
+                "consumerToken": getenv(TT_CTOKEN_ENV_KEY),
+                "employeeToken": getenv(TT_ETOKEN_ENV_KEY),
                 "expirationDate": date.today() + timedelta(days=1),
             },
         )
@@ -52,8 +57,17 @@ class TripleTex(ApiClient):
         hours: float,
         description: str,
         date: date = date.today(),
-        activity_id: int = int(getenv("TRIPLETEX_DEFAULT_ACTIVITY_ID")),
+        activity_id: int = getenv(TT_DEFAULT_ACTIVITY_ID_KEY),
     ) -> dict:
+        activity_id = int(activity_id)
+        if not activity_id:
+            raise ConfigurationException(
+                message="{key} env var not set, unable to auto-determine which activity to log to".format(
+                    key=TT_DEFAULT_ACTIVITY_ID_KEY
+                ),
+                missing_key=TT_DEFAULT_ACTIVITY_ID_KEY,
+            )
+
         result = loads(
             self.api_post(
                 "/timesheet/entry",
@@ -87,6 +101,19 @@ class TripleTex(ApiClient):
         if self._employee is None:
             self._employee = loads(self.api_get("/token/session/>whoAmI"))["value"]
         return self._employee
+
+    def is_configured(self):
+        return all(k in environ for k in (TT_ETOKEN_ENV_KEY, TT_CTOKEN_ENV_KEY))
+
+    def raise_configuration_exception(self):
+        if TT_CTOKEN_ENV_KEY not in environ:
+            raise ConfigurationException(
+                message="Missing consumer token", missing_key=TT_CTOKEN_ENV_KEY
+            )
+        elif TT_ETOKEN_ENV_KEY not in environ:
+            raise ConfigurationException(
+                message="Missing employee token", missing_key=TT_ETOKEN_ENV_KEY
+            )
 
 
 @click.group(
@@ -159,7 +186,7 @@ def find_activities(name: str, json: bool):
 @click.argument("hours", type=float)
 @click.argument("comment")
 @click.option(
-    "-a", "--activity-id", type=int, default=getenv("TRIPLETEX_DEFAULT_ACTIVITY_ID")
+    "-a", "--activity-id", type=int, default=getenv(TT_DEFAULT_ACTIVITY_ID_KEY)
 )
 @click.option(
     "-d",

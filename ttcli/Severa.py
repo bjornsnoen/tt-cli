@@ -1,16 +1,20 @@
 from datetime import date
 from json import loads
-from os import getenv
+from os import environ, getenv
 from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
 
-from ttcli.ApiClient import ApiClient, cachebust
+from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
+
+SEVERA_USERNAME_KEY = "SEVERA_USERNAME"
+SEVERA_PASSWORD_KEY = "SEVERA_PASSWORD"
 
 
 class Severa(ApiClient):
     def __init__(self):
+        self.raise_configuration_exception()
         self._token: Optional[dict] = None
         self.client = requests.session()
         api_version = "v0.1"
@@ -72,8 +76,8 @@ class Severa(ApiClient):
         )["value"]
         return_url = login_soup.find("input", attrs={"name": "ReturnUrl"})["value"]
         postbody = {
-            "Username": getenv("SEVERA_USERNAME"),
-            "Password": getenv("SEVERA_PASSWORD"),
+            "Username": getenv(SEVERA_USERNAME_KEY),
+            "Password": getenv(SEVERA_PASSWORD_KEY),
             "RememberUsername": False,
             "IsPlatformAuthenticatorAvailable": True,
             "ClientId": "severa",
@@ -156,3 +160,16 @@ class Severa(ApiClient):
             json=[{"op": "replace", "path": "isCompleted", "value": True}],
         ).text
         return loads(result)
+
+    def raise_configuration_exception(self):
+        if SEVERA_USERNAME_KEY not in environ:
+            raise ConfigurationException(
+                message="Missing username", missing_key=SEVERA_USERNAME_KEY
+            )
+        elif SEVERA_PASSWORD_KEY not in environ:
+            raise ConfigurationException(
+                message="Missing password", missing_key=SEVERA_PASSWORD_KEY
+            )
+
+    def is_configured(self) -> bool:
+        return all(k in environ for k in (SEVERA_USERNAME_KEY, SEVERA_PASSWORD_KEY))

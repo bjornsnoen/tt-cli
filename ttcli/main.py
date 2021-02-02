@@ -5,9 +5,8 @@ from typing import List
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
-from ttcli.ApiClient import ApiClient
-from ttcli.Severa import Severa
-from ttcli.TripleTex import TripleTex, tripletex_command
+from ttcli.ApiClient import ApiClient, ConfigurationException, get_configured_services
+from ttcli.TripleTex import tripletex_command
 
 
 @click.group(
@@ -41,7 +40,7 @@ def list():
 def write_to_all(hours: float, description: str, day: datetime, lock: bool):
     """ Write the given data to all known timesheet services. """
     day = day.date()
-    services: List[ApiClient] = [TripleTex()]
+    services = get_configured_services()
 
     for service in services:
         click.secho(
@@ -49,18 +48,23 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
             fg="yellow",
             nl=False,
         )
-        service.write_hours(hours, description, day)
-        click.secho(message=" Done", fg="green")
-        if lock:
-            click.secho(
-                message="Locking {date} in {service}".format(
-                    date=day.isoformat(), service=service.name
-                ),
-                fg="yellow",
-                nl=False,
-            )
-            service.lock_day()
+
+        try:
+            service.write_hours(hours, description, day)
             click.secho(message=" Done", fg="green")
+            if lock:
+                click.secho(
+                    message="Locking {date} in {service}".format(
+                        date=day.isoformat(), service=service.name
+                    ),
+                    fg="yellow",
+                    nl=False,
+                )
+                service.lock_day()
+                click.secho(message=" Done", fg="green")
+        except ConfigurationException as e:
+            click.secho("Warning: ", nl=False, blink=True)
+            click.secho(e.message)
 
 
 cli.add_command(tripletex_command, name="tripletex")

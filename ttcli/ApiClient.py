@@ -1,6 +1,8 @@
 from abc import ABC, ABCMeta, abstractmethod
+from dataclasses import dataclass
 from datetime import date
 from time import time
+from typing import List, Optional
 
 from requests import Session
 
@@ -44,8 +46,35 @@ class ApiClient(ABC, metaclass=ABCMeta):
     def write_hours(
         self, hours: float, description: str, date: date = date.today()
     ) -> dict:
+        """ :raises: ConfigurationException """
         pass
 
     @abstractmethod
     def lock_day(self, day: date = date.today()):
+        """ :raises: ConfigurationException """
         pass
+
+    @abstractmethod
+    def is_configured(self) -> bool:
+        """ Ensure that all configuration necessary for successful operation is present """
+        pass
+
+
+@dataclass
+class ConfigurationException(BaseException):
+    message: str
+    missing_key: Optional[str]
+
+
+def get_configured_services() -> List[ApiClient]:
+    from ttcli.Severa import Severa
+    from ttcli.TripleTex import TripleTex
+
+    services = []
+    for cls in (TripleTex, Severa):
+        try:
+            services.append(cls())
+        except ConfigurationException:
+            pass
+
+    return services
