@@ -21,9 +21,11 @@ class Severa(ApiClient):
         base_url = "https://severa.visma.com/psarest/{api_version}/".format(
             api_version=api_version
         )
-        super(Severa, self).__init__(
-            name="Severa", client=self.client, base_url=base_url
-        )
+        super(Severa, self).__init__(client=self.client, base_url=base_url)
+
+    @classmethod
+    def name(cls):
+        return "Severa"
 
     @property
     def login(self):

@@ -2,7 +2,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
 from datetime import date
 from time import time
-from typing import List, Optional
+from typing import Iterable, Optional, Type
 
 from requests import Session
 
@@ -12,19 +12,15 @@ def cachebust():
 
 
 class ApiClient(ABC, metaclass=ABCMeta):
-    def __init__(self, name: str, client: Session, base_url: str):
+    def __init__(self, client: Session = Session(), base_url: str = ""):
         self.client = client
         self.base_url = base_url.rstrip("/")
-        self._name = name
         super().__init__()
 
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, value):
-        self._name = value
+    @classmethod
+    @abstractmethod
+    def name(cls) -> str:
+        return "Generic"
 
     def api_get(self, path: str, params: dict = None) -> str:
         if params is None:
@@ -66,12 +62,17 @@ class ConfigurationException(BaseException):
     missing_key: Optional[str]
 
 
-def get_configured_services() -> List[ApiClient]:
+def get_all_services() -> Iterable[Type[ApiClient]]:
     from ttcli.Severa import Severa
     from ttcli.TripleTex import TripleTex
 
+    return TripleTex, Severa
+
+
+def get_configured_services() -> Iterable[ApiClient]:
+
     services = []
-    for cls in (TripleTex, Severa):
+    for cls in get_all_services():
         try:
             services.append(cls())
         except ConfigurationException:

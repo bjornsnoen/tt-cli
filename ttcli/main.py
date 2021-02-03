@@ -5,7 +5,11 @@ from typing import List
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 
-from ttcli.ApiClient import ApiClient, ConfigurationException, get_configured_services
+from ttcli.ApiClient import (
+    ConfigurationException,
+    get_all_services,
+    get_configured_services,
+)
 from ttcli.TripleTex import tripletex_command
 
 
@@ -20,9 +24,21 @@ def cli():
 @cli.command(
     cls=HelpColorsCommand, help_headers_color="yellow", help_options_color="green"
 )
-def list():
+@click.option(
+    "-c",
+    "--configured",
+    help="List only configured services",
+    is_flag=True,
+    default=False,
+)
+def list(configured: bool):
     """ List all known timesheet services """
-    print("Severa")
+    if not configured:
+        for service in get_all_services():
+            print(service.name())
+    else:
+        for service in get_configured_services():
+            print(service.__class__.name())
 
 
 @cli.command(

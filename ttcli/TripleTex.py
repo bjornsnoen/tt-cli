@@ -22,11 +22,13 @@ class TripleTex(ApiClient):
         else:
             api_url = "https://tripletex.no/v2/"
 
-        super(TripleTex, self).__init__(
-            name="TripleTex", client=Session(), base_url=api_url
-        )
+        super(TripleTex, self).__init__(client=Session(), base_url=api_url)
         self._token = None
         self._employee = None
+
+    @classmethod
+    def name(cls) -> str:
+        return "TripleTex"
 
     @property
     def login(self):
