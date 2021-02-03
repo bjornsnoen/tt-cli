@@ -17,8 +17,13 @@ TT_DEFAULT_ACTIVITY_ID_KEY = "TRIPLETEX_DEFAULT_ACTIVITY_ID"
 class TripleTex(ApiClient):
     def __init__(self):
         self.raise_configuration_exception()
+        if getenv(TT_CTOKEN_ENV_KEY).find("test-") > -1:
+            api_url = "https://api.tripletex.io/v2/"
+        else:
+            api_url = "https://tripletex.no/v2/"
+
         super(TripleTex, self).__init__(
-            name="TripleTex", client=Session(), base_url="https://api.tripletex.io/v2/"
+            name="TripleTex", client=Session(), base_url=api_url
         )
         self._token = None
         self._employee = None
