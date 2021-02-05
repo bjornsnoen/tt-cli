@@ -11,6 +11,7 @@ from ttcli.ApiClient import (
     get_configured_services,
 )
 from ttcli.TripleTex import tripletex_command
+from ttcli.Severa import severa_command
 
 
 @click.group(
@@ -60,7 +61,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
 
     for service in services:
         click.secho(
-            message="Writing to {service}".format(service=service.name),
+            message="Writing to {service}".format(service=service.name()),
             fg="yellow",
             nl=False,
         )
@@ -71,7 +72,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
             if lock:
                 click.secho(
                     message="Locking {date} in {service}".format(
-                        date=day.isoformat(), service=service.name
+                        date=day.isoformat(), service=service.name()
                     ),
                     fg="yellow",
                     nl=False,
@@ -84,6 +85,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
 
 
 cli.add_command(tripletex_command, name="tripletex")
+cli.add_command(severa_command, name="severa")
 
 if __name__ == "__main__":
     cli()

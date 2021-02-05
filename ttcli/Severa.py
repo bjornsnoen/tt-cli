@@ -1,10 +1,12 @@
-from datetime import date
-from json import loads
+from datetime import date, datetime, timedelta
+from json import loads, dumps
 from os import environ, getenv
 from typing import Optional
 
+import click
 import requests
 from bs4 import BeautifulSoup
+from click_help_colors import HelpColorsGroup
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
 
@@ -121,12 +123,9 @@ class Severa(ApiClient):
         return result
 
     def get_projects(self) -> dict:
-        endpoint = "/users/{guid}/phasetreephases".format(
-            guid=self.login["user"]["guid"]
-        )
         return loads(
             self.api_get(
-                endpoint,
+                self.user_endpoint("/phasetreephases"),
                 params={
                     "firstRow": 0,
                     "rowCount": 100,
@@ -137,12 +136,9 @@ class Severa(ApiClient):
         )
 
     def get_phases(self, project: dict) -> dict:
-        endpoint = "/users/{guid}/phasetreephases".format(
-            guid=self.login["user"]["guid"]
-        )
         return loads(
             self.api_get(
-                endpoint,
+                self.user_endpoint("/phasetreephases"),
                 params={
                     "firstRow": 0,
                     "rowCount": 100,
@@ -151,6 +147,9 @@ class Severa(ApiClient):
                 },
             )
         )
+
+    def user_endpoint(self, endpoint: str):
+        return f"/users/{self.login['user']['guid']}/{endpoint}"
 
     def lock_day(self, day: date = date.today()):
         endpoint = "/users/{user_id}/workdays/{date}".format(
@@ -175,3 +174,40 @@ class Severa(ApiClient):
 
     def is_configured(self) -> bool:
         return all(k in environ for k in (SEVERA_USERNAME_KEY, SEVERA_PASSWORD_KEY))
+
+    def get_logged_during_week(self, week: int):
+        year = date.today().year
+        starting_datetime = datetime.strptime(f"{year}-W{week}-1", "%Y-W%W-%w")
+        ending_datetime = starting_datetime + timedelta(days=7)
+
+        return loads(self.api_get(self.user_endpoint("/workhours"), params={
+            "firstRow": 0,
+            "rowCount": 100,
+            "calculateRowCount": True,
+            "startDate": starting_datetime.isoformat(),
+            "endDate": ending_datetime.isoformat()
+        }))
+
+
+@click.group(cls=HelpColorsGroup, help_headers_color="yellow", help_options_color="green")
+def severa_command():
+    """ Commands for the severa application """
+    pass
+
+
+@severa_command.command()
+@click.argument("week", type=int, default=datetime.today().isocalendar()[1])
+def timesheet(week: int):
+    client = Severa()
+    result = client.get_logged_during_week(week)
+    for entry in result:
+        hours = entry["quantity"]
+        when = date.fromisoformat(entry["eventDate"])
+        description = entry["description"]
+        day = when.strftime("%A")
+
+        click.secho(day, fg="green", nl=False)
+        click.secho(f" ({when.isoformat()})", fg="bright_black")
+        click.secho(f'{hours}: ', fg="yellow" if hours == 7.5 else "red", nl=False)
+        click.secho(description)
+        click.secho('--', fg='bright_black')
