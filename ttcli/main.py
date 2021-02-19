@@ -77,7 +77,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
                     fg="yellow",
                     nl=False,
                 )
-                service.lock_day()
+                service.lock_day(day=day)
                 click.secho(message=" Done", fg="green")
         except ConfigurationException as e:
             click.secho("Warning: ", nl=False, blink=True)
