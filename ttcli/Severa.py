@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from json import loads, dumps
 from os import environ, getenv
-from typing import Optional
+from typing import Optional, List, Dict
 
 import click
 import requests
@@ -199,7 +199,8 @@ def severa_command():
 @click.argument("week", type=int, default=datetime.today().isocalendar()[1])
 def timesheet(week: int):
     client = Severa()
-    result = client.get_logged_during_week(week)
+    result: List[Dict] = client.get_logged_during_week(week)
+    result.sort(key=lambda entry: entry.get('eventDate'))
     for entry in result:
         hours = entry["quantity"]
         when = date.fromisoformat(entry["eventDate"])
