@@ -11,6 +11,7 @@ html5lib = "*"
 python-dotenv = "*"
 tt-cli = {editable = true, path = "."}
 click-help-colors = "*"
+python-dateutil = "*"
 
 [dev-packages]
 black = "*"
