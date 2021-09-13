@@ -24,6 +24,6 @@ setup(
     entry_points="""
         [console_scripts]
         tt-cli=ttcli.main:cli
-        tt-a=ttcli.main:write_to_all
+        tt-a=ttcli.main:write_to_all_cmd
     """,
 )

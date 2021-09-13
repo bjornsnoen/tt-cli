@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+import csv
 from datetime import date, datetime
-from typing import List
+from io import BufferedReader
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
@@ -43,7 +44,10 @@ def list(configured: bool):
 
 
 @cli.command(
-    cls=HelpColorsCommand, help_headers_color="yellow", help_options_color="green"
+    cls=HelpColorsCommand,
+    help_headers_color="yellow",
+    help_options_color="green",
+    name="write-to-all",
 )
 @click.argument("hours", type=float)
 @click.argument("description")
@@ -54,6 +58,25 @@ def list(configured: bool):
     type=click.DateTime(formats=["%Y-%m-%d"]),
     default=date.today().isoformat(),
 )
+def write_to_all_cmd(hours: float, description: str, day: datetime, lock: bool):
+    write_to_all(hours, description, day, lock)
+
+
+@cli.command(
+    cls=HelpColorsCommand, help_headers_color="yellow", help_options_color="green"
+)
+@click.option("--lock/--no-lock", default=True)
+@click.argument("file", type=click.File("rb"))
+def write_to_all_csv(file: BufferedReader, lock: bool):
+    lines = [line.decode() for line in file.readlines()]
+    reader = csv.DictReader(lines)
+    for item in reader:
+        day = datetime.fromisoformat(item["date"])
+        description = item["description"]
+        hours = float(item["hours"])
+        write_to_all(hours, description, day, lock)
+
+
 def write_to_all(hours: float, description: str, day: datetime, lock: bool):
     """ Write the given data to all known timesheet services. """
     day = day.date()

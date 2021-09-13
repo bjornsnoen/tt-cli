@@ -234,11 +234,17 @@ def timesheet_week(week: int):
 
 @severa_command.command()
 @click.argument("month", type=int, default=datetime.today().month)
-def timesheet_month(month: int):
+@click.option("--include-future/--no-include-future", default=False)
+def timesheet_month(month: int, include_future: bool):
     client = Severa()
     year = datetime.today().year
     first_day = datetime.strptime(f"{year}-{month}-1", "%Y-%m-%d")
-    last_day = first_day + relativedelta(months=1, days=-1)
+    last_day_of_month = first_day + relativedelta(months=1, days=-1)
+    last_day = (
+        min(last_day_of_month, datetime.today() + relativedelta(days=-1))
+        if not include_future
+        else last_day_of_month
+    )
 
     weeks = []
 
@@ -253,6 +259,9 @@ def timesheet_month(month: int):
             weeks.append(result)
         click.secho("--\n", fg="bright_black")
 
+    click.secho(
+        f"\nMonth summary for {first_day.strftime('%B')}:", fg="yellow", bold=True
+    )
     month_total = 0
     for result in weeks:
         click.secho(
