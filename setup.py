@@ -13,6 +13,7 @@ setup(
         "click-help-colors==0.9",
         "html5lib==1.1",
         "idna==2.10; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+        "python-dateutil==2.8.2",
         "python-dotenv==0.15.0",
         "requests==2.25.1",
         "six==1.15.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",

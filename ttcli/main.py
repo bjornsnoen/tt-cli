@@ -10,8 +10,8 @@ from ttcli.ApiClient import (
     get_all_services,
     get_configured_services,
 )
-from ttcli.TripleTex import tripletex_command
 from ttcli.Severa import severa_command
+from ttcli.TripleTex import tripletex_command
 
 
 @click.group(
