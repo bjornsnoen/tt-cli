@@ -5,12 +5,15 @@ from io import BufferedReader
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
+from rich import traceback
+traceback.install()
 
 from ttcli.ApiClient import (
     ConfigurationException,
     get_all_services,
     get_configured_services,
 )
+from ttcli.output import print
 from ttcli.Severa import severa_command
 from ttcli.TripleTex import tripletex_command
 
@@ -83,28 +86,20 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
     services = get_configured_services()
 
     for service in services:
-        click.secho(
-            message="Writing to {service}".format(service=service.name()),
-            fg="yellow",
-            nl=False,
-        )
+        print(f"[yellow]Writing to {service.name()}[/yellow]", nl=False)
 
         try:
             service.write_hours(hours, description, day)
-            click.secho(message=" Done", fg="green")
+            print(" [green]Done[/green]")
             if lock:
-                click.secho(
-                    message="Locking {date} in {service}".format(
-                        date=day.isoformat(), service=service.name()
-                    ),
-                    fg="yellow",
+                print(
+                    f"[yellow]Locking {day.isoformat()} in {service.name()}[/yellow]",
                     nl=False,
                 )
                 service.lock_day(day=day)
-                click.secho(message=" Done", fg="green")
+                print(" [green]Done[/green]")
         except ConfigurationException as e:
-            click.secho("Warning: ", nl=False, blink=True)
-            click.secho(e.message)
+            print(f"[blink]Warning:[/blink] {e.message}")
 
 
 cli.add_command(tripletex_command, name="tripletex")

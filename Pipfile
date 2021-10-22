@@ -12,6 +12,7 @@ python-dotenv = "*"
 tt-cli = {editable = true, path = "."}
 click-help-colors = "*"
 python-dateutil = "*"
+rich = "*"
 
 [dev-packages]
 black = "*"

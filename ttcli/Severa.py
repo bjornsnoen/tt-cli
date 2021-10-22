@@ -1,15 +1,19 @@
 from datetime import date, datetime, timedelta
-from json import loads
+from json import load, loads
 from os import environ, getenv
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import click
 import requests
 from bs4 import BeautifulSoup
 from click_help_colors import HelpColorsGroup
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+from dateutil.tz import tzutc
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
+from ttcli.output import print
 
 SEVERA_USERNAME_KEY = "SEVERA_USERNAME"
 SEVERA_PASSWORD_KEY = "SEVERA_PASSWORD"
@@ -24,6 +28,7 @@ class Severa(ApiClient):
         base_url = "https://severa.visma.com/psarest/{api_version}/".format(
             api_version=api_version
         )
+        self.cachepath = Path("/tmp/severauth")
         super(Severa, self).__init__(client=self.client, base_url=base_url)
 
     @classmethod
@@ -35,38 +40,61 @@ class Severa(ApiClient):
         if self._token is not None:
             return self._token
 
-        login_page = self.api_get(
-            "/authentication/ExternalLogin",
-            {"provider": "VismaConnect", "redirect_uri": "https://severa.visma.com"},
-        )
+        def fetch_fresh_access_token() -> dict:
+            login_page = self.api_get(
+                "/authentication/ExternalLogin",
+                {
+                    "provider": "VismaConnect",
+                    "redirect_uri": "https://severa.visma.com",
+                },
+            )
 
-        login_soup = BeautifulSoup(login_page, "html5lib")
-        login_response = self.client.post(
-            "https://connect.visma.com/password",
-            data=self.get_login_post_body(login_soup),
-        )
+            login_soup = BeautifulSoup(login_page, "html5lib")
+            login_response = self.client.post(
+                "https://connect.visma.com/password",
+                data=self.get_login_post_body(login_soup),
+            )
 
-        data_soup = BeautifulSoup(login_response.text, "html5lib")
+            data_soup = BeautifulSoup(login_response.text, "html5lib")
 
-        id_token = data_soup.find("input", attrs={"name": "id_token"})["value"]
-        scope = data_soup.find("input", attrs={"name": "scope"})["value"]
-        code = data_soup.find("input", attrs={"name": "code"})["value"]
-        session_state = data_soup.find("input", attrs={"name": "session_state"})[
-            "value"
-        ]
+            id_token = data_soup.find("input", attrs={"name": "id_token"})["value"]
+            scope = data_soup.find("input", attrs={"name": "scope"})["value"]
+            code = data_soup.find("input", attrs={"name": "code"})["value"]
+            session_state = data_soup.find("input", attrs={"name": "session_state"})[
+                "value"
+            ]
 
-        auth_token_response = self.api_post(
-            "/authentication/vismaConnect/obtainLocalAccessToken",
-            {
-                "id_token": id_token,
-                "scope": scope,
-                "code": code,
-                "session_state": session_state,
-            },
-            get_params={"_": cachebust()},
-        )
+            auth_token_response = self.api_post(
+                "/authentication/vismaConnect/obtainLocalAccessToken",
+                {
+                    "id_token": id_token,
+                    "scope": scope,
+                    "code": code,
+                    "session_state": session_state,
+                },
+                get_params={"_": cachebust()},
+            )
 
-        self.login = loads(auth_token_response)
+            with self.cachepath.open("w") as cached:
+                cached.write(auth_token_response)
+
+            return loads(auth_token_response)
+
+        def fetch_token_from_cache() -> Optional[dict]:
+            if self.cachepath.exists():
+                access_token_container = load(self.cachepath.open("r"))
+                expiry_date = parse(access_token_container["expiresUtc"])
+
+                timediff = expiry_date - datetime.now(tz=tzutc())
+                if timediff.total_seconds() > 10:
+                    return access_token_container
+            return None
+
+        access_token_container = fetch_token_from_cache()
+        if not access_token_container:
+            access_token_container = fetch_fresh_access_token()
+
+        self.login = access_token_container
         self.client.headers["authorization"] = "bearer " + self.login["accessToken"]
         self.client.headers["referer"] = "https://severa.visma.com/"
         return self._token
@@ -214,15 +242,15 @@ def timesheet(week: int, client: Optional[Severa]) -> List[Dict]:
         when = date.fromisoformat(entry["eventDate"])
         description = entry["description"]
         day = when.strftime("%A")
+        hour_color = "yellow" if hours == 7.5 else "red"
 
-        click.secho(day, fg="green", nl=False)
-        click.secho(f" ({when.isoformat()})", fg="bright_black")
-        click.secho(f"{hours}: ", fg="yellow" if hours == 7.5 else "red", nl=False)
-        click.secho(description)
-        click.secho("--", fg="bright_black")
+        print(f"[green]{day}[/green] [bright_black]({when.isoformat()})[/bright_black]")
+        print(f"[{hour_color}]{hours}[/{hour_color}]: {description}")
+        print("[bright_black]--[/bright_black]")
 
-    click.secho(f"Total w{week}: ", fg="green", nl=False)
-    click.secho(f'{sum([float(entry["quantity"]) for entry in result])}h')
+    print(
+        f'[green]Total w{week}:[/green] {sum([float(entry["quantity"]) for entry in result])}h'
+    )
     return result
 
 
@@ -257,22 +285,15 @@ def timesheet_month(month: int, include_future: bool):
         )
         if len(result):
             weeks.append(result)
-        click.secho("--\n", fg="bright_black")
+        print("[bright_black bold]--\n[/bright_black bold]")
 
-    click.secho(
-        f"\nMonth summary for {first_day.strftime('%B')}:", fg="yellow", bold=True
-    )
+    print(f"\n[yellow bold]Month summary for {first_day.strftime('%B')}:[/yellow bold]")
     month_total = 0
     for result in weeks:
-        click.secho(
-            f"Total w{date.fromisoformat(result[0]['eventDate']).strftime('%W')}: ",
-            fg="green",
-            nl=False,
-        )
         week_total = sum([float(entry["quantity"]) for entry in result])
         month_total += week_total
-        click.secho(f"{week_total}h")
+        week_number = date.fromisoformat(result[0]["eventDate"]).strftime("%W")
+        print(f"[green]Total w{week_number}:[/green] {week_total}h")
 
-    click.secho("--", fg="bright_black")
-    click.secho(f"Total {first_day.strftime('%b')}: ", fg="green", nl=False)
-    click.secho(f"{month_total}h")
+    print("[bright_black]--[/bright_black]")
+    print(f"[green]Total {first_day.strftime('%b')}:[/green] {month_total}")

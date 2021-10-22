@@ -8,6 +8,7 @@ from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from requests import Session
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
+from ttcli.output import print
 
 TT_ETOKEN_ENV_KEY = "TRIPLETEX_EMPLOYEE_TOKEN"
 TT_CTOKEN_ENV_KEY = "TRIPLETEX_CONSUMER_TOKEN"
@@ -172,16 +173,14 @@ def find_activities(name: str, json: bool):
         )
     else:
         if json:
-            click.echo(dumps(result))
+            print(dumps(result))
             return
 
         for i, activity in enumerate(result["values"], start=1):
-            click.secho("Name: ", nl=False)
-            click.secho(activity["name"], fg="green")
-            click.secho("Project ID: ", nl=False)
-            click.secho(str(activity["id"]), fg="green")
+            print(f'Name: [green]{activity["name"]}[/green]')
+            print(f'Project ID: [green]{str(activity["id"])}[/green]')
             if i < len(result["values"]):
-                click.secho("--", fg="bright_black")
+                print("[bright_black]--[/bright_black]")
 
 
 @tripletex_command.command(
