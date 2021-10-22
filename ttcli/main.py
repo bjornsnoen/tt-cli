@@ -6,6 +6,7 @@ from io import BufferedReader
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from rich import traceback
+
 traceback.install()
 
 from ttcli.ApiClient import (
