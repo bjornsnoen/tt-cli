@@ -1,3 +1,25 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta:__legacy__"
+[tool.poetry]
+name = "ttcli"
+version = "1.0.0"
+description = "Time tracking tool for the cli"
+readme = "README.md"
+authors = ["Bjørn Snoen <bjorn@fink.no>"]
+
+[tool.poetry.scripts]
+tt-cli = "ttcli.main:cli"
+tt-a = "ttcli.main:write_to_all_cmd"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+beautifulsoup4 = "*"
+click = "*"
+click-help-colors = "*"
+html5lib = "*"
+python-dateutil = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+isort = "*"
