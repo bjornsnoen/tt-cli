@@ -42,17 +42,17 @@ class ApiClient(ABC, metaclass=ABCMeta):
     def write_hours(
         self, hours: float, description: str, date: date = date.today()
     ) -> dict:
-        """ :raises: ConfigurationException """
+        """:raises: ConfigurationException"""
         pass
 
     @abstractmethod
     def lock_day(self, day: date = date.today()):
-        """ :raises: ConfigurationException """
+        """:raises: ConfigurationException"""
         pass
 
     @abstractmethod
     def is_configured(self) -> bool:
-        """ Ensure that all configuration necessary for successful operation is present """
+        """Ensure that all configuration necessary for successful operation is present"""
         pass
 
 
@@ -63,14 +63,14 @@ class ConfigurationException(BaseException):
 
 
 def get_all_services() -> Iterable[Type[ApiClient]]:
+    from ttcli.NoaWorkbook import NoaWorkbook
     from ttcli.Severa import Severa
     from ttcli.TripleTex import TripleTex
 
-    return TripleTex, Severa
+    return TripleTex, Severa, NoaWorkbook
 
 
 def get_configured_services() -> Iterable[ApiClient]:
-
     services = []
     for cls in get_all_services():
         try:

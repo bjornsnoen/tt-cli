@@ -14,6 +14,7 @@ from ttcli.ApiClient import (
     get_all_services,
     get_configured_services,
 )
+from ttcli.NoaWorkbook import noa_command
 from ttcli.output import print
 from ttcli.Severa import severa_command
 from ttcli.TripleTex import tripletex_command
@@ -23,7 +24,7 @@ from ttcli.TripleTex import tripletex_command
     cls=HelpColorsGroup, help_headers_color="yellow", help_options_color="green"
 )
 def cli():
-    """ Program for interacting with timesheet providers from the cli """
+    """Program for interacting with timesheet providers from the cli"""
     pass
 
 
@@ -38,7 +39,7 @@ def cli():
     default=False,
 )
 def list(configured: bool):
-    """ List all known timesheet services """
+    """List all known timesheet services"""
     if not configured:
         for service in get_all_services():
             print(service.name())
@@ -82,22 +83,22 @@ def write_to_all_csv(file: BufferedReader, lock: bool):
 
 
 def write_to_all(hours: float, description: str, day: datetime, lock: bool):
-    """ Write the given data to all known timesheet services. """
-    day = day.date()
+    """Write the given data to all known timesheet services."""
+    day_actual = day.date()
     services = get_configured_services()
 
     for service in services:
         print(f"[yellow]Writing to {service.name()}[/yellow]", nl=False)
 
         try:
-            service.write_hours(hours, description, day)
+            service.write_hours(hours, description, day_actual)
             print(" [green]Done[/green]")
             if lock:
                 print(
-                    f"[yellow]Locking {day.isoformat()} in {service.name()}[/yellow]",
+                    f"[yellow]Locking {day_actual.isoformat()} in {service.name()}[/yellow]",
                     nl=False,
                 )
-                service.lock_day(day=day)
+                service.lock_day(day=day_actual)
                 print(" [green]Done[/green]")
         except ConfigurationException as e:
             print(f"[blink]Warning:[/blink] {e.message}")
@@ -105,6 +106,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
 
 cli.add_command(tripletex_command, name="tripletex")
 cli.add_command(severa_command, name="severa")
+cli.add_command(noa_command, name="noa")
 
 if __name__ == "__main__":
     cli()

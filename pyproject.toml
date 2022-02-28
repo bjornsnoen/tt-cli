@@ -19,7 +19,11 @@ python-dateutil = "*"
 python-dotenv = "*"
 requests = "*"
 rich = "*"
+pydantic = "^1.9.0"
+typing-extensions = "^4.1.1"
+inflection = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 black = "*"
 isort = "*"
+
