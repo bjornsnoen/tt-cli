@@ -21,7 +21,7 @@ def get_week_span(week: int) -> WeekSpan:
     return WeekSpan(start_datetime, end_datetime)
 
 
-def get_week_number(day: date) -> int:
+def get_week_number(day: date = date.today()) -> int:
     calendar = day.isocalendar()
     return calendar.week
 

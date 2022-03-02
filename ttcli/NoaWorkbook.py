@@ -1,15 +1,22 @@
 from datetime import date, datetime
 from functools import cached_property
 from json import loads
+from json.decoder import JSONDecodeError
 from os import environ, getenv
+from pathlib import Path
+from textwrap import dedent
 from typing import Optional
 
 import click
 from click_help_colors.core import HelpColorsGroup
+from dotenv import set_key
+from dotenv.main import load_dotenv
 from inflection import camelize
 from pydantic import BaseModel, Extra
 from requests.sessions import Session
 from rich import print
+from rich.console import Console
+from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
 from ttcli.utils import get_week_number, get_week_span, typed_cache
@@ -75,6 +82,32 @@ class NoaTimesheetEntry(NoaTimesheetEntryPartial):
     task_phase_name: str
 
 
+class NoaDateVisualization(BaseModel):
+    access: bool
+    activity_id: int
+    activity_text: str
+    customer_id: int
+    customer_name: str
+    first_reg_date: str
+    id: int
+    job_id: int
+    job_name: str
+    pinned: bool
+    project_id: int
+    project_name: str
+    resource_id: int
+    sequence_number: int
+    task_description: str
+    task_hours: float
+    task_hours_time_registration: float
+    task_id: int
+    task_phase_name: str
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
+
+
 class NoaWorkbook(ApiClient):
     def __init__(
         self, client: Session = Session(), base_url="https://noa.workbook.net/api/"
@@ -112,6 +145,13 @@ class NoaWorkbook(ApiClient):
 
     def lock_day(self, day: date):
         pass
+
+    def get_day_visualization(self, date=date.today()) -> NoaDateVisualization:
+        result = self.api_get(
+            "json/reply/TimeEntrySheetVisualizationRequest",
+            {"ResourceId": self.employee_id, "Date": date.isoformat()},
+        )
+        return NoaDateVisualization.parse_obj(loads(result)[0])
 
     def write_hours(
         self, hours: float, description: str, day: date
@@ -189,6 +229,49 @@ def timesheet(
 @click.argument("week", type=int, default=get_week_number(date.today()))
 def timesheet_week(week: int):
     timesheet(week)
+
+
+@noa_command.command()
+def configure():
+    noa_username = Prompt.ask("Enter your Noa Workbook username")
+    noa_password = Prompt.ask(
+        "Enter your password [dim italic](input will be hidden)[/dim italic]",
+        password=True,
+    )
+    dotenv_location = Path(__file__).parent.parent / ".env"
+    set_key(
+        dotenv_path=dotenv_location,
+        key_to_set=NOA_USERNAME_KEY,
+        value_to_set=noa_username,
+    )
+    set_key(
+        dotenv_path=dotenv_location,
+        key_to_set=NOA_PASSWORD_KEY,
+        value_to_set=noa_password,
+    )
+    load_dotenv(override=True)
+    client = NoaWorkbook()
+
+    try:
+        default_activity = client.get_day_visualization()
+    except JSONDecodeError:
+        print("[red]Wrong username or password[/red]")
+        return 1
+
+    console = Console(highlight=False)
+    console.print(
+        dedent(
+            f"""
+            [green]Success![/green]
+            You are good to go :partying_face:
+            Your hours will be logged to the following task when using [yellow]tt-a[/yellow]
+
+            * Client: {default_activity.customer_name}
+            * Job: {default_activity.job_name}
+            * Task: {default_activity.task_description}
+            """
+        )
+    )
 
 
 if __name__ == "__main__":
