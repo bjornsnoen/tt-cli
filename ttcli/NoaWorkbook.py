@@ -9,6 +9,7 @@ from typing import Optional
 
 import click
 from click_help_colors.core import HelpColorsGroup
+from dateutil.relativedelta import relativedelta
 from dotenv import set_key
 from dotenv.main import load_dotenv
 from inflection import camelize
@@ -19,7 +20,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
-from ttcli.utils import get_week_number, get_week_span, typed_cache
+from ttcli.utils import get_month_span, get_week_number, get_week_span, typed_cache
 
 NOA_USERNAME_KEY = "NOA_USERNAME"
 NOA_PASSWORD_KEY = "NOA_PASSWORD"
@@ -274,5 +275,32 @@ def configure():
     )
 
 
-if __name__ == "__main__":
+@noa_command.command()
+@click.argument("month", type=int, default=datetime.today().month)
+@click.option("--include-future/--no-include-future", default=False)
+def timesheet_month(month: int, include_future: bool):
     client = NoaWorkbook()
+    first_day, last_day = get_month_span(month, include_future=include_future)
+    weeks = []
+
+    for week in range(int(first_day.strftime("%W")), int(last_day.strftime("%W")) + 1):
+        result = list(
+            filter(
+                lambda entry: entry.post_date.month == month,
+                timesheet(week, client),
+            )
+        )
+        if len(result):
+            weeks.append(result)
+        print("[bright_black bold]--\n[/bright_black bold]")
+
+    print(f"\n[yellow bold]Month summary for {first_day.strftime('%B')}:[/yellow bold]")
+    month_total = 0
+    for result in weeks:
+        week_total = sum([entry.hours for entry in result])
+        month_total += week_total
+        week_number = result[0].post_date.strftime("%W")
+        print(f"[green]Total w{week_number}:[/green] {week_total}h")
+
+    print("[bright_black]--[/bright_black]")
+    print(f"[green]Total {first_day.strftime('%b')}:[/green] {month_total}")

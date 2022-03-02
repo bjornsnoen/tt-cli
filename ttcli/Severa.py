@@ -10,11 +10,11 @@ import requests
 from bs4 import BeautifulSoup
 from click_help_colors import HelpColorsGroup
 from dateutil.parser import parse
-from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzutc
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
 from ttcli.output import print
+from ttcli.utils import get_month_span
 
 SEVERA_USERNAME_KEY = "SEVERA_USERNAME"
 SEVERA_PASSWORD_KEY = "SEVERA_PASSWORD"
@@ -259,14 +259,7 @@ def timesheet_week(week: int):
 @click.option("--include-future/--no-include-future", default=False)
 def timesheet_month(month: int, include_future: bool):
     client = Severa()
-    year = datetime.today().year
-    first_day = datetime.strptime(f"{year}-{month}-1", "%Y-%m-%d")
-    last_day_of_month = first_day + relativedelta(months=1, days=-1)
-    last_day = (
-        min(last_day_of_month, datetime.today() + relativedelta(days=-1))
-        if not include_future
-        else last_day_of_month
-    )
+    first_day, last_day = get_month_span(month, include_future=include_future)
 
     weeks = []
 
