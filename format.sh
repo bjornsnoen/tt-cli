@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
-pipenv run black **/*.py
-pipenv run isort --profile=black **/*.py
+poetry run black **/*.py
+poetry run isort --profile=black **/*.py
