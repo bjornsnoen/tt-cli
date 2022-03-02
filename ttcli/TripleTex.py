@@ -2,6 +2,7 @@ from base64 import b64encode
 from datetime import date, datetime, timedelta
 from json import dumps, loads
 from os import environ, getenv
+from typing import Optional
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
@@ -18,7 +19,7 @@ TT_DEFAULT_ACTIVITY_ID_KEY = "TRIPLETEX_DEFAULT_ACTIVITY_ID"
 class TripleTex(ApiClient):
     def __init__(self):
         self.raise_configuration_exception()
-        if getenv(TT_CTOKEN_ENV_KEY).find("test-") > -1:
+        if getenv(TT_CTOKEN_ENV_KEY, default="").find("test-") > -1:
             api_url = "https://api.tripletex.io/v2/"
         else:
             api_url = "https://tripletex.no/v2/"
@@ -36,12 +37,13 @@ class TripleTex(ApiClient):
         if self._token is not None:
             return self._token
 
+        expiry = date.today() + timedelta(days=1)
         result = self.client.put(
             self.endpoint("/token/session/:create"),
             params={
-                "consumerToken": getenv(TT_CTOKEN_ENV_KEY),
-                "employeeToken": getenv(TT_ETOKEN_ENV_KEY),
-                "expirationDate": date.today() + timedelta(days=1),
+                "consumerToken": getenv(TT_CTOKEN_ENV_KEY, default=""),
+                "employeeToken": getenv(TT_ETOKEN_ENV_KEY, default=""),
+                "expirationDate": expiry.isoformat(),
             },
         )
         self.login = loads(result.text)["value"]
@@ -64,8 +66,8 @@ class TripleTex(ApiClient):
         self,
         hours: float,
         description: str,
-        date: date = date.today(),
-        activity_id: int = getenv(TT_DEFAULT_ACTIVITY_ID_KEY),
+        day: date = date.today(),
+        activity_id: int = int(getenv(TT_DEFAULT_ACTIVITY_ID_KEY, default=-1)),
     ) -> dict:
         activity_id = int(activity_id)
         if not activity_id:
@@ -82,7 +84,7 @@ class TripleTex(ApiClient):
                 post_params={
                     "activity": {"id": activity_id},
                     "employee": {"id": self.employee["employeeId"]},
-                    "date": date.isoformat(),
+                    "date": day.isoformat(),
                     "hours": hours,
                     "comment": description,
                 },
@@ -91,7 +93,7 @@ class TripleTex(ApiClient):
         return result
 
     def lock_day(self, day: date = date.today()):
-        """ This isn't a thing in tripletex, but it's in the contract so we pass """
+        """This isn't a thing in tripletex, but it's in the contract so we pass"""
         pass
 
     def api_get(self, path: str, params=None) -> str:
@@ -99,7 +101,9 @@ class TripleTex(ApiClient):
         len(self.auth_header)
         return super().api_get(path, params)
 
-    def api_post(self, path: str, post_params: dict, get_params: dict = None) -> str:
+    def api_post(
+        self, path: str, post_params: dict, get_params: Optional[dict] = None
+    ) -> str:
         # Only override in order to ensure we are authed
         len(self.auth_header)
         return super().api_post(path, post_params, get_params)
@@ -128,7 +132,7 @@ class TripleTex(ApiClient):
     cls=HelpColorsGroup, help_headers_color="yellow", help_options_color="green"
 )
 def tripletex_command():
-    """ Commands for the tripletex application.
+    """Commands for the tripletex application.
 
     In order to log hours to tripletex, you will need to set a consumer token, an employee token, as well as an activity id
     against which to log the hours. You set these as environment variables, which can either be global or in the .env file
@@ -158,7 +162,7 @@ def tripletex_command():
     help="Output as json with additional activity data from the api call instead of formatted list",
 )
 def find_activities(name: str, json: bool):
-    """ Iterate over all activities applicable to employee's timesheet looking for a name that matches.
+    """Iterate over all activities applicable to employee's timesheet looking for a name that matches.
     This will give you the activity id, which you will need to set as an environment variable.
 
     NAME is part of (or the entirety of) the activity you are looking for. It is case insensitive.
@@ -203,11 +207,11 @@ def find_activities(name: str, json: bool):
 def write_to_other_activity(
     hours: float, comment: str, activity_id: int, day: datetime
 ):
-    """ Write hours to an activity. By default we write to the activity defined by the TRIPLETEX_DEFAULT_ACTIVITY_ID
-    environment variable, but a different variable can be specified via the -a option. """
-    day = day.date()
+    """Write hours to an activity. By default we write to the activity defined by the TRIPLETEX_DEFAULT_ACTIVITY_ID
+    environment variable, but a different variable can be specified via the -a option."""
+    day_actual = day.date()
     tt = TripleTex()
     result = tt.write_hours(
-        hours=hours, description=comment, activity_id=activity_id, date=day
+        hours=hours, description=comment, activity_id=activity_id, day=day_actual
     )
     click.echo(dumps(result))

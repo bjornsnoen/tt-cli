@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from functools import cache, cached_property
+from functools import cached_property
 from json import loads
 from os import environ, getenv
 from typing import Optional
@@ -7,7 +7,7 @@ from typing import Optional
 import click
 from click_help_colors.core import HelpColorsGroup
 from inflection import camelize
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from requests.sessions import Session
 from rich import print
 
@@ -18,13 +18,10 @@ NOA_USERNAME_KEY = "NOA_USERNAME"
 NOA_PASSWORD_KEY = "NOA_PASSWORD"
 
 
-class NoaTimesheetEntry(BaseModel):
-    access: bool
+class NoaTimesheetEntryPartial(BaseModel):
     activity_id: int
     approval_status: int
     billable: bool
-    can_edit: bool
-    can_edit_week: bool
     correction: int
     cost: float
     cost_currency_amount: float
@@ -38,10 +35,6 @@ class NoaTimesheetEntry(BaseModel):
     id: int
     job_id: int
     journal_number: int
-    lock_description: str
-    lock_number: int
-    locked: bool
-    pinned: bool
     post_date: datetime
     pricelist_id: int
     public: bool
@@ -50,15 +43,11 @@ class NoaTimesheetEntry(BaseModel):
     sale: float
     sale_currency_amount: float
     sale_currency_id: int
-    sequence_has_entry: bool
     sequence_number: int
     tariff_additional_percent_cost: float
     tariff_additional_percent_ic_sale: float
     tariff_additional_percent_sale: float
-    task_hours: float
-    task_hours_time_registration: float
     task_id: int
-    task_phase_name: str
     update_date: datetime
     update_resource_id: int
     update_type: int
@@ -69,6 +58,21 @@ class NoaTimesheetEntry(BaseModel):
     class Config:
         alias_generator = camelize
         allow_population_by_field_name = True
+        extra = Extra.forbid
+
+
+class NoaTimesheetEntry(NoaTimesheetEntryPartial):
+    access: bool
+    can_edit: bool
+    can_edit_week: bool
+    lock_description: str
+    lock_number: int
+    locked: bool
+    pinned: bool
+    sequence_has_entry: bool
+    task_hours: float
+    task_hours_time_registration: float
+    task_phase_name: str
 
 
 class NoaWorkbook(ApiClient):
@@ -110,9 +114,22 @@ class NoaWorkbook(ApiClient):
         pass
 
     def write_hours(
-        self, hours: float, description: str, date: date
-    ) -> NoaTimesheetEntry:
-        pass
+        self, hours: float, description: str, day: date
+    ) -> NoaTimesheetEntryPartial:
+        days = self.get_week_days(week=get_week_number(day))
+        work_day = next(d for d in days if d.post_date.date() == day)
+        result = self.api_post(
+            "/json/reply/TimeEntryUpdateRequest",
+            post_params={
+                "Id": work_day.id,
+                "Activityid": work_day.activity_id,
+                "Billable": True,
+                "Hours": hours,
+                "TaskId": work_day.task_id,
+                "Description": description,
+            },
+        )
+        return NoaTimesheetEntryPartial.parse_obj(loads(result))
 
     @typed_cache
     def get_week_days(self, week: int) -> list[NoaTimesheetEntry]:
@@ -125,10 +142,6 @@ class NoaWorkbook(ApiClient):
         )
 
         return [NoaTimesheetEntry.parse_obj(entry) for entry in response]
-
-    def get_day_id(self, day: date) -> int:
-        days = self.get_week_days(week=get_week_number(day))
-        return 1
 
     def get_logged_during_week(self, week: int) -> list[NoaTimesheetEntry]:
         return [entry for entry in self.get_week_days(week) if entry.hours is not None]
@@ -180,4 +193,3 @@ def timesheet_week(week: int):
 
 if __name__ == "__main__":
     client = NoaWorkbook()
-    client.get_logged_during_week(8)

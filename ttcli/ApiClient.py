@@ -22,12 +22,14 @@ class ApiClient(ABC, metaclass=ABCMeta):
     def name(cls) -> str:
         return "Generic"
 
-    def api_get(self, path: str, params: dict = None) -> str:
+    def api_get(self, path: str, params: Optional[dict] = None) -> str:
         if params is None:
             params = {}
         return self.client.get(self.endpoint(path), params=params).text
 
-    def api_post(self, path: str, post_params: dict, get_params: dict = None) -> str:
+    def api_post(
+        self, path: str, post_params: dict, get_params: Optional[dict] = None
+    ) -> str:
         if get_params is None:
             get_params = {}
 
@@ -40,7 +42,7 @@ class ApiClient(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     def write_hours(
-        self, hours: float, description: str, date: date = date.today()
+        self, hours: float, description: str, day: date = date.today()
     ) -> dict:
         """:raises: ConfigurationException"""
         pass

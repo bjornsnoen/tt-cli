@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from functools import cached_property
 from json import load, loads
 from os import environ, getenv
 from pathlib import Path
@@ -35,11 +36,8 @@ class Severa(ApiClient):
     def name(cls):
         return "Severa"
 
-    @property
-    def login(self):
-        if self._token is not None:
-            return self._token
-
+    @cached_property
+    def login(self) -> dict:
         def fetch_fresh_access_token() -> dict:
             login_page = self.api_get(
                 "/authentication/ExternalLogin",
@@ -57,10 +55,10 @@ class Severa(ApiClient):
 
             data_soup = BeautifulSoup(login_response.text, "html5lib")
 
-            id_token = data_soup.find("input", attrs={"name": "id_token"})["value"]
-            scope = data_soup.find("input", attrs={"name": "scope"})["value"]
-            code = data_soup.find("input", attrs={"name": "code"})["value"]
-            session_state = data_soup.find("input", attrs={"name": "session_state"})[
+            id_token = data_soup.find("input", attrs={"name": "id_token"})["value"]  # type: ignore
+            scope = data_soup.find("input", attrs={"name": "scope"})["value"]  # type: ignore
+            code = data_soup.find("input", attrs={"name": "code"})["value"]  # type: ignore
+            session_state = data_soup.find("input", attrs={"name": "session_state"})[  # type: ignore
                 "value"
             ]
 
@@ -94,14 +92,10 @@ class Severa(ApiClient):
         if not access_token_container:
             access_token_container = fetch_fresh_access_token()
 
-        self.login = access_token_container
         self.client.headers["authorization"] = "bearer " + self.login["accessToken"]
         self.client.headers["referer"] = "https://severa.visma.com/"
-        return self._token
 
-    @login.setter
-    def login(self, value: dict):
-        self._token = value
+        return access_token_container
 
     def get_login_post_body(self, login_soup):
         csrf_token = login_soup.find(
@@ -120,7 +114,7 @@ class Severa(ApiClient):
         return postbody
 
     def write_hours(
-        self, hours: float, description: str, date: date = date.today()
+        self, hours: float, description: str, day: date = date.today()
     ) -> dict:
         possible_projects = self.get_projects()
         first_project = possible_projects[0]
@@ -140,7 +134,7 @@ class Severa(ApiClient):
             "overtime": None,
             "description": description,
             "quantity": hours,
-            "eventDate": date.isoformat(),
+            "eventDate": day.isoformat(),
             "startTime": None,
             "endTime": None,
             "isModifiable": True,
@@ -227,7 +221,7 @@ class Severa(ApiClient):
     cls=HelpColorsGroup, help_headers_color="yellow", help_options_color="green"
 )
 def severa_command():
-    """ Commands for the severa application """
+    """Commands for the severa application"""
     pass
 
 
@@ -236,7 +230,7 @@ def timesheet(week: int, client: Optional[Severa]) -> List[Dict]:
         client = Severa()
 
     result: List[Dict] = client.get_logged_during_week(week)
-    result.sort(key=lambda entry: entry.get("eventDate"))
+    result.sort(key=lambda entry: entry.get("eventDate"))  # type: ignore
     for entry in result:
         hours = entry["quantity"]
         when = date.fromisoformat(entry["eventDate"])
