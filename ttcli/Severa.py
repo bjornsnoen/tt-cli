@@ -14,7 +14,7 @@ from dateutil.tz import tzutc
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
 from ttcli.output import print
-from ttcli.utils import get_month_span
+from ttcli.utils import get_month_span, get_week_number
 
 SEVERA_USERNAME_KEY = "SEVERA_USERNAME"
 SEVERA_PASSWORD_KEY = "SEVERA_PASSWORD"
@@ -263,7 +263,7 @@ def timesheet_month(month: int, include_future: bool):
 
     weeks = []
 
-    for week in range(int(first_day.strftime("%W")), int(last_day.strftime("%W")) + 1):
+    for week in range(get_week_number(first_day), get_week_number(last_day) + 1):
         result = list(
             filter(
                 lambda entry: date.fromisoformat(entry["eventDate"]).month == month,

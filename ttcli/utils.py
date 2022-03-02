@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import cache
-from typing import Callable, Iterable, TypeVar
+from typing import Callable, TypeVar
 
 from dateutil.relativedelta import relativedelta
 
@@ -64,3 +64,7 @@ def get_month_span(
     )
 
     return TimeSpan(first_day, last_day)
+
+
+def week_number(day: date) -> int:
+    return int(day.strftime("%W"))

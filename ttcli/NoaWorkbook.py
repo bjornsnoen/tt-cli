@@ -9,7 +9,6 @@ from typing import Optional
 
 import click
 from click_help_colors.core import HelpColorsGroup
-from dateutil.relativedelta import relativedelta
 from dotenv import set_key
 from dotenv.main import load_dotenv
 from inflection import camelize
@@ -283,7 +282,7 @@ def timesheet_month(month: int, include_future: bool):
     first_day, last_day = get_month_span(month, include_future=include_future)
     weeks = []
 
-    for week in range(int(first_day.strftime("%W")), int(last_day.strftime("%W")) + 1):
+    for week in range(get_week_number(first_day), get_week_number(last_day) + 1):
         result = list(
             filter(
                 lambda entry: entry.post_date.month == month,
