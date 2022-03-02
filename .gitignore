@@ -3,3 +3,4 @@
 .idea
 tt_cli.egg-info/
 __pycache__/
+dist/
