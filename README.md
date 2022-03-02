@@ -42,22 +42,25 @@ Getting an employee token is simple enough as long as you've got the rights, [re
 however afaik there is no way to get a consumer token without being an integration partner.
 
 ## Ok, how do I set this up?
-First things first, install the dependencies with [poetry](https://python-poetry.org/docs/)
+I recommend installing with
+[pipx](https://github.com/pypa/pipx#pipx--install-and-run-python-applications-in-isolated-environments)
+so as not to pollute your global python environment, however if you want you
+can just install with regular pip.
 
 ```shell
-$ curl -sSL https://install.python-poetry.org | python3 -
-$ poetry install
+$ pipx install --index-url https://pypi.brbcoffee.com/simple/ ttcli
+
+# Or if you don't want/have pipx
+$ pip install --user --index-url https://pypi.brbcoffee.com/simple/ ttcli
+
+# Or if you just don't care
+$ pip install --index-url https://pypi.brbcoffee.com/simple/ ttcli
 ```
 
-This has created a python venv for you with the dependencies of this project, as well as installed two commands to that venv
+You now have the following programs installed. If you used the pip method, it
+may have shown some warnings about adding a directory to your PATH. Do so.
 * `tt-cli` the main program
 * `tt-a` a shortcut to `tt-cli write-to-all`
-
-Add the location of the venv bin folder to your path
-```shell
-$ echo "PATH=\$PATH:$(poetry env info --path)/bin" >> ~/.zshrc
-```
-or `.bashrc` or whichever shell you're on.
 
 Next you need to set up your environment variables. There's a `.env.template`
 file in this project, copy it to `.env` and fill in the blanks. To find the
