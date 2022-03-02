@@ -11,8 +11,8 @@ in more than one place, and, from the bottom of my heart, _fuck that_.
 Currently it can log hours to Visma Severa, Noa Workbook, and Tripletex, with
 severe caveats. You do this with the bundled commands `tt-cli write-to-all 7.5
 "Today I wrote all the tests"` for example puts 7.5 hours in your configured
-systems with the comment "Today I wrote all the tests". You can see help
-textfor any command by passing `--help`. A good starting point would be `tt-cli
+systems with the comment "Today I wrote all the tests". You can see help text
+for any command by passing `--help`. A good starting point would be `tt-cli
 --help`
 
 ## What caveats?
