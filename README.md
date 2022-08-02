@@ -62,7 +62,6 @@ may have shown some warnings about adding a directory to your PATH. Do so.
 * `tt-cli` the main program
 * `tt-a` a shortcut to `tt-cli write-to-all`
 
-Next you need to set up your environment variables. There's a `.env.template`
-file in this project, copy it to `.env` and fill in the blanks. To find the
+Next you need to set login to your services. Check `tt-cli configure`. To find the
 tripletex activity id you may use the `tt-cli tripletex find` command. That's
 it, now refer back to [usage](#what-can-it-do).
