@@ -7,8 +7,10 @@ from typing import Optional
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from requests import Session
+from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
+from ttcli.config import clear_config, configure_command, source_config, write_config
 from ttcli.output import print
 
 TT_ETOKEN_ENV_KEY = "TRIPLETEX_EMPLOYEE_TOKEN"
@@ -215,3 +217,34 @@ def write_to_other_activity(
         hours=hours, description=comment, activity_id=activity_id, day=day_actual
     )
     click.echo(dumps(result))
+
+
+def _configure():
+    print("[yellow]Please fill in your TripleTex credentials[/yellow]")
+    employee_token = Prompt.ask("Employee token")
+    consumer_token = Prompt.ask("Consumer token")
+
+    write_config(
+        TripleTex,
+        {TT_CTOKEN_ENV_KEY: consumer_token, TT_ETOKEN_ENV_KEY: employee_token},
+    )
+    source_config()
+
+    try:
+        client = TripleTex()
+        client.employee
+        print("[green]Success[/green]")
+    except:
+        print("[red]Login failed[/red]")
+        clear_config(TripleTex)
+        return 1
+
+
+@tripletex_command.command()
+def configure():
+    _configure()
+
+
+@configure_command.command(name="tripletex")
+def configure_cmd():
+    _configure()

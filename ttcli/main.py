@@ -7,6 +7,8 @@ import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from rich import traceback
 
+from ttcli.config import configure_command
+
 traceback.install()
 
 from ttcli.ApiClient import (
@@ -107,6 +109,7 @@ def write_to_all(hours: float, description: str, day: datetime, lock: bool):
 cli.add_command(tripletex_command, name="tripletex")
 cli.add_command(severa_command, name="severa")
 cli.add_command(noa_command, name="noa")
+cli.add_command(configure_command, name="configure")
 
 if __name__ == "__main__":
     cli()

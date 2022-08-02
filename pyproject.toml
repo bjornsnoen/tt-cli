@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "ttcli"
-version = "1.1.1"
+version = "1.2.0"
 description = "Time tracking tool for the cli"
 readme = "README.md"
 authors = ["Bjørn Snoen <bjorn@fink.no>"]
+include = ["alembic.ini"]
 
 [tool.poetry.scripts]
 tt-cli = "ttcli.main:cli"
@@ -22,8 +23,17 @@ rich = "*"
 pydantic = "^1.9.0"
 typing-extensions = "^4.1.1"
 inflection = "^0.5.1"
+SQLAlchemy = "^1.4.39"
+appdirs = "^1.4.4"
+alembic = "^1.8.1"
+SQLAlchemy-Utils = "^0.38.3"
+cryptography = "^37.0.4"
 
 [tool.poetry.dev-dependencies]
 black = "*"
 isort = "*"
 
+[tool.pyright]
+include = ["ttcli"]
+pythonversion = "3.9"
+reportIncompatibleMethodOverride = true

@@ -11,8 +11,11 @@ from bs4 import BeautifulSoup
 from click_help_colors import HelpColorsGroup
 from dateutil.parser import parse
 from dateutil.tz import tzutc
+from rich import print
+from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
+from ttcli.config import clear_config, configure_command, source_config, write_config
 from ttcli.output import print
 from ttcli.utils import get_month_span, get_week_number
 
@@ -284,3 +287,33 @@ def timesheet_month(month: int, include_future: bool):
 
     print("[bright_black]--[/bright_black]")
     print(f"[green]Total {first_day.strftime('%b')}:[/green] {month_total}")
+
+
+def _configure():
+    print("[yellow]Please fill in your Severa credentials[/yellow]")
+    username = Prompt.ask("Username")
+    password = Prompt.ask(
+        "Password [dim italic](won't be visible)[/dim italic]", password=True
+    )
+
+    write_config(Severa, {SEVERA_USERNAME_KEY: username, SEVERA_PASSWORD_KEY: password})
+    source_config()
+
+    try:
+        client = Severa()
+        client.get_projects()
+        print("[green]Success[/green]")
+    except:
+        clear_config(Severa)
+        print("[red]Login failed[/red]")
+        return 1
+
+
+@severa_command.command()
+def configure():
+    _configure()
+
+
+@configure_command.command(name="severa")
+def configure_cmd():
+    _configure()

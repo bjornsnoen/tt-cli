@@ -2,7 +2,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass
 from datetime import date
 from time import time
-from typing import Iterable, Optional, Type
+from typing import Any, Iterable, Optional, Type
 
 from requests import Session
 
@@ -43,7 +43,7 @@ class ApiClient(ABC, metaclass=ABCMeta):
     @abstractmethod
     def write_hours(
         self, hours: float, description: str, day: date = date.today()
-    ) -> dict:
+    ) -> Any:
         """:raises: ConfigurationException"""
         pass
 

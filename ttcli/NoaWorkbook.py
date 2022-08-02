@@ -19,6 +19,14 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
+from ttcli.config import (
+    DBConfig,
+    clear_config,
+    configure_command,
+    requires_db,
+    source_config,
+    write_config,
+)
 from ttcli.utils import get_month_span, get_week_number, get_week_span, typed_cache
 
 NOA_USERNAME_KEY = "NOA_USERNAME"
@@ -143,7 +151,7 @@ class NoaWorkbook(ApiClient):
     def employee_id(self) -> int:
         return self.login()["Id"]
 
-    def lock_day(self, day: date):
+    def lock_day(self, day: date = date.today()):
         pass
 
     def get_day_visualization(self, date=date.today()) -> NoaDateVisualization:
@@ -154,7 +162,7 @@ class NoaWorkbook(ApiClient):
         return NoaDateVisualization.parse_obj(loads(result)[0])
 
     def write_hours(
-        self, hours: float, description: str, day: date
+        self, hours: float, description: str, day: date = date.today()
     ) -> NoaTimesheetEntryPartial:
         days = self.get_week_days(week=get_week_number(day))
         work_day = next(d for d in days if d.post_date.date() == day)
@@ -221,7 +229,9 @@ def timesheet(
         print(f"[{hour_color}]{hours}[/{hour_color}]: {description}")
         print("[bright_black]--[/bright_black]")
 
-    print(f"[green]Total w{week}:[/green] {sum([entry.hours for entry in result])}h")
+    print(
+        f"[green]Total w{week}:[/green] {sum([entry.hours for entry in result if entry.hours is not None])}h"
+    )
     return result
 
 
@@ -229,49 +239,6 @@ def timesheet(
 @click.argument("week", type=int, default=get_week_number(date.today()))
 def timesheet_week(week: int):
     timesheet(week)
-
-
-@noa_command.command()
-def configure():
-    noa_username = Prompt.ask("Enter your Noa Workbook username")
-    noa_password = Prompt.ask(
-        "Enter your password [dim italic](input will be hidden)[/dim italic]",
-        password=True,
-    )
-    dotenv_location = Path(__file__).parent.parent / ".env"
-    set_key(
-        dotenv_path=dotenv_location,
-        key_to_set=NOA_USERNAME_KEY,
-        value_to_set=noa_username,
-    )
-    set_key(
-        dotenv_path=dotenv_location,
-        key_to_set=NOA_PASSWORD_KEY,
-        value_to_set=noa_password,
-    )
-    load_dotenv(override=True)
-    client = NoaWorkbook()
-
-    try:
-        default_activity = client.get_day_visualization()
-    except JSONDecodeError:
-        print("[red]Wrong username or password[/red]")
-        return 1
-
-    console = Console(highlight=False)
-    console.print(
-        dedent(
-            f"""
-            [green]Success![/green]
-            You are good to go :partying_face:
-            Your hours will be logged to the following task when using [yellow]tt-a[/yellow]
-
-            * Client: {default_activity.customer_name}
-            * Job: {default_activity.job_name}
-            * Task: {default_activity.task_description}
-            """
-        )
-    )
 
 
 @noa_command.command()
@@ -303,3 +270,48 @@ def timesheet_month(month: int, include_future: bool):
 
     print("[bright_black]--[/bright_black]")
     print(f"[green]Total {first_day.strftime('%b')}:[/green] {month_total}")
+
+
+def _configure():
+    """Configure Noa Workbook"""
+    print("[yellow]Please fill in your Noa credentials[/yellow]")
+    username = Prompt.ask("Username")
+    password = Prompt.ask(
+        "Password [dim italic](won't be visible)[/dim italic]", password=True
+    )
+
+    write_config(NoaWorkbook, {NOA_USERNAME_KEY: username, NOA_PASSWORD_KEY: password})
+    source_config()
+
+    try:
+        client = NoaWorkbook()
+        default_activity = client.get_day_visualization()
+    except JSONDecodeError:
+        print("[red]Wrong username or password[/red]")
+        clear_config(NoaWorkbook)
+        return 1
+
+    console = Console(highlight=False)
+    console.print(
+        dedent(
+            f"""
+            [green]Success![/green]
+            You are good to go :partying_face:
+            Your hours will be logged to the following task when using [yellow]tt-a[/yellow]
+
+            * Client: {default_activity.customer_name}
+            * Job: {default_activity.job_name}
+            * Task: {default_activity.task_description}
+            """
+        )
+    )
+
+
+@noa_command.command()
+def configure():
+    _configure()
+
+
+@configure_command.command(name="noa")
+def configure_subcommand():
+    _configure()
