@@ -21,7 +21,7 @@ from rich.prompt import Prompt
 from ttcli.ApiClient import ApiClient, ConfigurationException
 from ttcli.config import (
     DBConfig,
-    clear_config,
+    clear_service_config,
     configure_command,
     requires_db,
     source_config,
@@ -288,7 +288,7 @@ def _configure():
         default_activity = client.get_day_visualization()
     except JSONDecodeError:
         print("[red]Wrong username or password[/red]")
-        clear_config(NoaWorkbook)
+        clear_service_config(NoaWorkbook)
         return 1
 
     console = Console(highlight=False)

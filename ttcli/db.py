@@ -45,11 +45,11 @@ R = TypeVar("R")
 
 def requires_db(func: Callable[P, R]) -> Callable[P, R]:
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
         ensure_latest_db_exists()
-        return func(*args, **kwargs)  # type: ignore
+        return func(*args, **kwargs)
 
-    return wrapped  # type: ignore
+    return wrapped
 
 
 Session = sessionmaker(get_engine())

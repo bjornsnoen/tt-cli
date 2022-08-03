@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ttcli"
-version = "1.2.0"
+version = "1.3.0"
 description = "Time tracking tool for the cli"
 readme = "README.md"
 authors = ["Bjørn Snoen <bjorn@fink.no>"]
@@ -11,7 +11,7 @@ tt-cli = "ttcli.main:cli"
 tt-a = "ttcli.main:write_to_all_cmd"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 beautifulsoup4 = "*"
 click = "*"
 click-help-colors = "*"
@@ -28,6 +28,7 @@ appdirs = "^1.4.4"
 alembic = "^1.8.1"
 SQLAlchemy-Utils = "^0.38.3"
 cryptography = "^37.0.4"
+keyring = "^23.7.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"

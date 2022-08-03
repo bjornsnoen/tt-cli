@@ -7,6 +7,31 @@ services in the cloud.
 Because sometimes (always) as a consultant they will ask you to log your hours
 in more than one place, and, from the bottom of my heart, _fuck that_.
 
+## Installation and setup
+I recommend installing with
+[pipx](https://github.com/pypa/pipx#pipx--install-and-run-python-applications-in-isolated-environments)
+so as not to pollute your global python environment, however if you want you
+can just install with regular pip.
+
+```shell
+$ pipx install --index-url https://pypi.brbcoffee.com/simple/ ttcli
+
+# Or if you don't want/have pipx
+$ pip install --user --index-url https://pypi.brbcoffee.com/simple/ ttcli
+
+# Or if you just don't care
+$ pip install --index-url https://pypi.brbcoffee.com/simple/ ttcli
+```
+
+You now have the following programs installed. If you used the pip method, it
+may have shown some warnings about adding a directory to your PATH. Do so.
+* `tt-cli` the main program
+* `tt-a` a shortcut to `tt-cli write-to-all`
+
+Next you need to set login to your services. Check `tt-cli configure`. To find the
+tripletex activity id you may use the `tt-cli tripletex find` command. That's
+it, now refer back to [usage](#what-can-it-do).
+
 ## What can it do?
 Currently it can log hours to Visma Severa, Noa Workbook, and Tripletex, with
 severe caveats. You do this with the bundled commands `tt-cli write-to-all 7.5
@@ -38,30 +63,22 @@ only user doesn't have project administration access. Thus:
 * We can only log hours to non-project activities
 * You need to supply your own consumer token as well as employee token
 
-Getting an employee token is simple enough as long as you've got the rights, [ref their docs](https://tripletex.no/execute/docViewer?articleId=853&language=0),
-however afaik there is no way to get a consumer token without being an integration partner.
+Getting an employee token is simple enough as long as you've got the rights,
+[ref their docs](https://tripletex.no/execute/docViewer?articleId=853&language=0), 
+however afaik there is no way to get a consumer token without being an
+integration partner.
 
-## Ok, how do I set this up?
-I recommend installing with
-[pipx](https://github.com/pypa/pipx#pipx--install-and-run-python-applications-in-isolated-environments)
-so as not to pollute your global python environment, however if you want you
-can just install with regular pip.
+## Requirements
+### Python 3.10
+This project uses PEP 612, because it's amazing, and therefore it needs python
+3.10. If your system doesn't have python 3.10, I recommend looking into
+[asdf](https://asdf-vm.com/) or [pyenv](https://github.com/pyenv/pyenv) to work
+around aging os distributions.
 
-```shell
-$ pipx install --index-url https://pypi.brbcoffee.com/simple/ ttcli
-
-# Or if you don't want/have pipx
-$ pip install --user --index-url https://pypi.brbcoffee.com/simple/ ttcli
-
-# Or if you just don't care
-$ pip install --index-url https://pypi.brbcoffee.com/simple/ ttcli
-```
-
-You now have the following programs installed. If you used the pip method, it
-may have shown some warnings about adding a directory to your PATH. Do so.
-* `tt-cli` the main program
-* `tt-a` a shortcut to `tt-cli write-to-all`
-
-Next you need to set login to your services. Check `tt-cli configure`. To find the
-tripletex activity id you may use the `tt-cli tripletex find` command. That's
-it, now refer back to [usage](#what-can-it-do).
+### Keyring
+To keep you from having to log in every time you use the app, we store your
+credentials. To store the credentials securely, we use the OS keyring to store
+an encryption key. If you don't have a keyring set up that probably means
+you're on some custom linux system you've built yourself. First of all: nice!
+Second of all: I can't possibly help with every single toaster running arch,
+but you could start looking [here](https://pypi.org/project/keyring/).

@@ -49,7 +49,7 @@ R = TypeVar("R")
 def typed_cache(func: Callable[P, R]) -> Callable[P, R]:
     """Because the builtin cache throws away basically all type annotations.
     Use this as a function/method decorator to preserve type information."""
-    return cache(func)
+    return cache(func)  # type: ignore
 
 
 def get_month_span(

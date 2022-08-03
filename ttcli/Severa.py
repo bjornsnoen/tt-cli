@@ -15,7 +15,12 @@ from rich import print
 from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException, cachebust
-from ttcli.config import clear_config, configure_command, source_config, write_config
+from ttcli.config import (
+    clear_service_config,
+    configure_command,
+    source_config,
+    write_config,
+)
 from ttcli.output import print
 from ttcli.utils import get_month_span, get_week_number
 
@@ -304,7 +309,7 @@ def _configure():
         client.get_projects()
         print("[green]Success[/green]")
     except:
-        clear_config(Severa)
+        clear_service_config(Severa)
         print("[red]Login failed[/red]")
         return 1
 

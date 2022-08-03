@@ -10,7 +10,12 @@ from requests import Session
 from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
-from ttcli.config import clear_config, configure_command, source_config, write_config
+from ttcli.config import (
+    clear_service_config,
+    configure_command,
+    source_config,
+    write_config,
+)
 from ttcli.output import print
 
 TT_ETOKEN_ENV_KEY = "TRIPLETEX_EMPLOYEE_TOKEN"
@@ -236,7 +241,7 @@ def _configure():
         print("[green]Success[/green]")
     except:
         print("[red]Login failed[/red]")
-        clear_config(TripleTex)
+        clear_service_config(TripleTex)
         return 1
 
 
