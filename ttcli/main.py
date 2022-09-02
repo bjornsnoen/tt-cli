@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import csv
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from io import BufferedReader
 
 import click
@@ -50,6 +50,24 @@ def list(configured: bool):
             print(service.__class__.name())
 
 
+days_of_week = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+]
+
+
 @cli.command(
     cls=HelpColorsCommand,
     help_headers_color="yellow",
@@ -61,12 +79,27 @@ def list(configured: bool):
 @click.option("--lock/--no-lock", default=True)
 @click.option(
     "-d",
-    "--day",
+    "--date",
     type=click.DateTime(formats=["%Y-%m-%d"]),
     default=date.today().isoformat(),
 )
-def write_to_all_cmd(hours: float, description: str, day: datetime, lock: bool):
-    write_to_all(hours, description, day, lock)
+@click.option(
+    "-D",
+    "--weekday",
+    type=click.Choice(
+        days_of_week,
+        case_sensitive=False,
+    ),
+)
+def write_to_all_cmd(
+    hours: float, description: str, date: datetime, lock: bool, weekday: str
+):
+    if weekday is not None:
+        weekday_index = days_of_week.index(weekday) % 7
+        monday = date - timedelta(days=date.weekday())
+        date = monday + timedelta(days=weekday_index)
+
+    write_to_all(hours, description, date, lock)
 
 
 @cli.command(
