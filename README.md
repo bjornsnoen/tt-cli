@@ -5,7 +5,7 @@ services in the cloud.
 
 ## Why?
 Because sometimes (always) as a consultant they will ask you to log your hours
-in more than one place, and, from the bottom of my heart, _fuck that_.
+in more than one place, and, from the bottom of my heart, _no_.
 
 ## Installation and setup
 I recommend installing with
@@ -34,7 +34,7 @@ it, now refer back to [usage](#what-can-it-do).
 
 ## What can it do?
 Currently it can log hours to Visma Severa, Noa Workbook, and Tripletex, with
-severe caveats. You do this with the bundled commands `tt-cli write-to-all 7.5
+some caveats. You do this with the bundled commands `tt-cli write-to-all 7.5
 "Today I wrote all the tests"` for example puts 7.5 hours in your configured
 systems with the comment "Today I wrote all the tests". You can see help text
 for any command by passing `--help`. A good starting point would be `tt-cli
@@ -56,12 +56,10 @@ for any command by passing `--help`. A good starting point would be `tt-cli
 Their API is [open source](https://github.com/tripletex/tripletex-api2/), and
 they have an open test environment. That's all I've got access to, because in
 order to get a consumer token and an employee token, you need to be a known
-integration partner, which we are not (yet). Worse, when I created a test
-environment with them, I for some reason got an environment where my one and
-only user doesn't have project administration access. Thus:
+integration partner, which we are not (yet). Thus:
 
-* We can only log hours to non-project activities
 * You need to supply your own consumer token as well as employee token
+* You will need to get TripleTex to register a new app for you for your users to register employee tokens against
 
 Getting an employee token is simple enough as long as you've got the rights,
 [ref their docs](https://tripletex.no/execute/docViewer?articleId=853&language=0), 

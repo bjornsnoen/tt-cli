@@ -1,7 +1,9 @@
+from typing import Any
+
 from rich.console import Console
 
 
-def print(text: str, nl=True):
+def print(text: str | Any, nl=True):
     if not hasattr(print, "console"):
         print.console = Console(highlight=False)
 

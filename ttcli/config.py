@@ -122,7 +122,7 @@ def list_config():
 def source_config():
     for config in read_config() or []:
         for k, v in config.config.items():
-            environ[k] = v
+            environ[k] = str(v)
 
 
 @requires_db

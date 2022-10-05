@@ -61,13 +61,13 @@ class ApiClient(ABC, metaclass=ABCMeta):
 @dataclass
 class ConfigurationException(BaseException):
     message: str
-    missing_key: Optional[str]
+    missing_key: Optional[str] = None
 
 
 def get_all_services() -> Iterable[Type[ApiClient]]:
     from ttcli.NoaWorkbook import NoaWorkbook
     from ttcli.Severa import Severa
-    from ttcli.TripleTex import TripleTex
+    from ttcli.tripletex.TripleTex import TripleTex
 
     return TripleTex, Severa, NoaWorkbook
 

@@ -3,14 +3,11 @@ from functools import cached_property
 from json import loads
 from json.decoder import JSONDecodeError
 from os import environ, getenv
-from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
 import click
 from click_help_colors.core import HelpColorsGroup
-from dotenv import set_key
-from dotenv.main import load_dotenv
 from inflection import camelize
 from pydantic import BaseModel, Extra
 from requests.sessions import Session
@@ -20,10 +17,8 @@ from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
 from ttcli.config import (
-    DBConfig,
     clear_service_config,
     configure_command,
-    requires_db,
     source_config,
     write_config,
 )
