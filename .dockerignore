@@ -1,6 +1,5 @@
 dist/
 __pycache__/
-Dockerfile
 .git/
 .gitignore
 .venv/
