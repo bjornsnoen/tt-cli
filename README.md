@@ -80,3 +80,16 @@ an encryption key. If you don't have a keyring set up that probably means
 you're on some custom linux system you've built yourself. First of all: nice!
 Second of all: I can't possibly help with every single toaster running arch,
 but you could start looking [here](https://pypi.org/project/keyring/).
+
+### Running the TripleTex auth service
+The auth service is packaged into a docker image, and just needs to know which
+consumer token to use and whether to target tripletex testing or prod.
+Optionally you may also pass a port to run the service on. Default is 8000.
+
+```bash
+$ docker run \
+    -e TT_CONSUMER_TOKEN=<your-app-consumer-token> \
+    -e TT_PROD=true \
+    -e TT_AUTH_PORT=<port-number> \
+    ghcr.io/bjornsnoen/tt-cli:auth
+```
