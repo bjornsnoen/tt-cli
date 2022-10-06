@@ -16,6 +16,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
+          images: |
+            ghcr.io/bjornsnoen/tt-cli
+          tags: |
+            type=raw,value=auth
           labels: |
             org.opencontainers.image.source=https://github.com/bjornsnoen/tt-cli
 
@@ -30,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ghcr.io/bjornsnoen/tt-cli:auth
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
