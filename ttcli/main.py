@@ -7,7 +7,7 @@ import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
 from rich import traceback
 
-from ttcli.config import configure_command
+from ttcli.config.config import configure_command
 
 traceback.install()
 

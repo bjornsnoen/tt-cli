@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
-from ttcli.config import (
+from ttcli.config.config import (
     clear_service_config,
     configure_command,
     source_config,

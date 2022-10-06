@@ -11,8 +11,7 @@ from rich.prompt import IntPrompt, Prompt
 from rich.table import Table
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
-from ttcli.config import (
-    DBConfig,
+from ttcli.config.config import (
     clear_service_config,
     configure_command,
     read_service_config,
@@ -20,7 +19,7 @@ from ttcli.config import (
     write_config,
 )
 from ttcli.output import print
-from ttcli.tripletex.types import SessionToken, SessionTokenResponse
+from ttcli.tripletex.types import SessionTokenResponse
 
 TT_EMPLOYEE_TOKEN_KEY = "TT_EMPLOYEE_TOKEN"
 TT_SERVICE_URL_KEY = "TT_SERVICE_URL"

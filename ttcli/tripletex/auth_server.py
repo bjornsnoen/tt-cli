@@ -8,9 +8,11 @@ from ttcli.tripletex.types import ApiTokenEnvelope, SessionTokenResponse
 
 app = FastAPI()
 
-api_url = "https://api.tripletex.io/v2/"
 
 consumer_token = getenv("TT_CONSUMER_TOKEN")
+prod = getenv("TT_PROD", False)
+
+api_url = "https://api.tripletex.io/v2/" if prod else "https://tripletex.no/v2/"
 
 
 @app.post("/login", response_model=SessionTokenResponse)

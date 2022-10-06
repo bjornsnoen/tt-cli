@@ -1,7 +1,7 @@
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from ttcli.config import mapper_registry
+from ttcli.config.config import mapper_registry
 from ttcli.db import get_db_location
 
 # this is the Alembic Config object, which provides

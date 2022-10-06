@@ -1,6 +1,6 @@
 import dotenv
 
-from ttcli.config import source_config
+from ttcli.config.config import source_config
 
 source_config()
 
