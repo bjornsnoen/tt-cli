@@ -11,4 +11,6 @@ RUN poetry install --no-root
 COPY ./ /app
 RUN poetry install
 
+LABEL org.opencontainers.image.description="Runs the tripletex auth service for exchanging employee tokens for session tokens"
+
 CMD ["sh", "-c", "poetry run uvicorn ttcli.tripletex.auth_server:app --port $TT_AUTH_PORT"]
