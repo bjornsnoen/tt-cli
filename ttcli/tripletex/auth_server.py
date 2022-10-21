@@ -12,10 +12,13 @@ app = FastAPI()
 consumer_token = getenv("TT_CONSUMER_TOKEN")
 prod = getenv("TT_PROD", False)
 
-api_url = "https://api.tripletex.io/v2/" if prod else "https://tripletex.no/v2/"
+api_url = "https://tripletex.no/v2/" if prod else "https://api.tripletex.io/v2/"
 
 
-@app.post("/login", response_model=SessionTokenResponse)
+@app.post(
+    "/login",
+    response_model=SessionTokenResponse,
+)
 def create_token(employee_token: str = Body(alias="employeeToken", embed=True)):
     expire_at = date.today() + timedelta(days=7)
     response = put(
@@ -27,7 +30,9 @@ def create_token(employee_token: str = Body(alias="employeeToken", embed=True)):
         },
     )
     data = response.json()
-    return ApiTokenEnvelope(**data).value
+    api_token = ApiTokenEnvelope(**data).value
+    response = SessionTokenResponse(**api_token.dict() | {"api_url": api_url})
+    return response
 
 
 if __name__ == "__main__":

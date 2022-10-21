@@ -5,6 +5,7 @@ from textwrap import dedent
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
+from pydantic import AnyHttpUrl, BaseModel, HttpUrl
 from requests import JSONDecodeError, Session, post
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
@@ -19,7 +20,7 @@ from ttcli.config.config import (
     write_config,
 )
 from ttcli.output import print
-from ttcli.tripletex.types import SessionTokenResponse
+from ttcli.tripletex.types import EmployeeDTO, SessionTokenResponse
 
 TT_EMPLOYEE_TOKEN_KEY = "TT_EMPLOYEE_TOKEN"
 TT_SERVICE_URL_KEY = "TT_SERVICE_URL"
@@ -31,9 +32,7 @@ class TripleTex(ApiClient):
     def __init__(self):
         self.raise_configuration_exception()
 
-        super(TripleTex, self).__init__(
-            client=Session(), base_url="https://api.tripletex.io/v2/"
-        )
+        super(TripleTex, self).__init__(client=Session())
         self._token = None
         self._employee = None
 
@@ -68,9 +67,9 @@ class TripleTex(ApiClient):
         write_config(self.__class__, config)
 
     @property
-    def login(self):
+    def login(self) -> EmployeeDTO:
         if self._token is not None:
-            return self._token
+            return self.employee
 
         if token := self.get_saved_session_token():
             if token.expiration_date >= date.today():
@@ -88,6 +87,7 @@ class TripleTex(ApiClient):
     @login.setter
     def login(self, value: SessionTokenResponse):
         self.client.auth = ("0", value.token)
+        self.base_url = value.api_url.rstrip("/")
         self._token = value
         self.persist_session_token(value)
 
@@ -113,7 +113,7 @@ class TripleTex(ApiClient):
                 post_params={
                     "activity": {"id": activity_id},
                     "project": {"id": project_id},
-                    "employee": {"id": self.employee["employeeId"]},
+                    "employee": {"id": self.employee.employee_id},
                     "date": day.isoformat(),
                     "hours": hours,
                     "comment": description,
@@ -155,10 +155,14 @@ class TripleTex(ApiClient):
         pass
 
     @property
-    def employee(self):
-        self.login
+    def employee(self) -> EmployeeDTO:
+        if not self._token:
+            self.login
+
         if self._employee is None:
-            self._employee = loads(self.api_get("/token/session/>whoAmI"))["value"]
+            self._employee = EmployeeDTO(
+                **loads(self.api_get("/token/session/>whoAmI"))["value"]
+            )
         return self._employee
 
     def is_configured(self):
@@ -272,7 +276,9 @@ def _configure():
     """Configure TripleTex"""
     print("[yellow]Please fill in your TripleTex credentials[/yellow]")
     employee_token = Prompt.ask("Employee token")
-    login_service_url = Prompt.ask("Service url")
+    login_service_url = Prompt.ask(
+        "Service url [gray](must include http(s) and /login parts)[/gray]"
+    )
 
     write_config(
         TripleTex,

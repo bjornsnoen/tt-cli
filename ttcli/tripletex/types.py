@@ -41,3 +41,15 @@ class ApiTokenEnvelope(BaseModel):
 class SessionTokenResponse(TripletexToken):
     token: str
     expiration_date: date
+    api_url: HttpUrl
+
+
+class EmployeeDTO(BaseModel):
+    employee_id: int
+    employee: dict
+    company_id: int
+    company: dict
+
+    class Config(BaseConfig):
+        alias_generator = camel_case
+        allow_population_by_field_name = True
