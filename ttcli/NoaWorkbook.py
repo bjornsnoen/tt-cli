@@ -64,6 +64,7 @@ class NoaTimesheetEntryPartial(BaseModel):
     description: Optional[str] = None
     has_approved_resource_initals: Optional[str] = None
     hours: Optional[float] = None
+    is_costing_code_valid: bool
 
     class Config:
         alias_generator = camelize
