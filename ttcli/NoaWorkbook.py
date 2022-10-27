@@ -64,7 +64,6 @@ class NoaTimesheetEntryPartial(BaseModel):
     description: Optional[str] = None
     has_approved_resource_initals: Optional[str] = None
     hours: Optional[float] = None
-    is_costing_code_valid: bool
 
     class Config:
         alias_generator = camelize
@@ -84,6 +83,7 @@ class NoaTimesheetEntry(NoaTimesheetEntryPartial):
     task_hours: float
     task_hours_time_registration: float
     task_phase_name: str
+    is_costing_code_valid: bool
 
 
 class NoaDateVisualization(BaseModel):
