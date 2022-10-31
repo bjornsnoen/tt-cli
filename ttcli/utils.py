@@ -31,7 +31,7 @@ class TimeSpan:
 
 def get_week_span(week: int) -> TimeSpan:
     year = date.today().year
-    start_datetime = datetime.strptime(f"{year}-W{week}-1", "%Y-W%W-%w")
+    start_datetime = datetime.strptime(f"{year}-W{week}-1", "%Y-W%W-%w").date()
     end_datetime = start_datetime + timedelta(days=6)
 
     return TimeSpan(start_datetime, end_datetime)
@@ -55,10 +55,10 @@ def typed_cache(func: Callable[P, R]) -> Callable[P, R]:
 def get_month_span(
     month: int, include_future: bool = False, year: int = datetime.today().year
 ) -> TimeSpan:
-    first_day = datetime.strptime(f"{year}-{month}-1", "%Y-%m-%d")
+    first_day = datetime.strptime(f"{year}-{month}-1", "%Y-%m-%d").date()
     last_day_of_month = first_day + relativedelta(months=1, days=-1)
     last_day = (
-        min(last_day_of_month, datetime.today() + relativedelta(days=-1))
+        min(last_day_of_month, date.today())
         if not include_future
         else last_day_of_month
     )

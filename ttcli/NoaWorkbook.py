@@ -203,7 +203,9 @@ def noa_command():
 
 
 def timesheet(
-    week: int, client: Optional[NoaWorkbook] = None
+    week: int,
+    client: Optional[NoaWorkbook] = None,
+    first_day_mask: Optional[date] = None,
 ) -> list[NoaTimesheetEntry]:
     if not client:
         client = NoaWorkbook()
@@ -214,6 +216,9 @@ def timesheet(
         if entry.description is not None
     ]
     result.sort(key=lambda entry: entry.post_date)
+    if first_day_mask:
+        result = [entry for entry in result if entry.post_date.date() >= first_day_mask]
+
     for entry in result:
         hours = entry.hours
         when = entry.post_date.date()
@@ -225,9 +230,12 @@ def timesheet(
         print(f"[{hour_color}]{hours}[/{hour_color}]: {description}")
         print("[bright_black]--[/bright_black]")
 
-    print(
-        f"[green]Total w{week}:[/green] {sum([entry.hours for entry in result if entry.hours is not None])}h"
-    )
+    if first_day_mask and len(result) == 0:
+        pass
+    else:
+        print(
+            f"[green]Total w{week}:[/green] {sum([entry.hours for entry in result if entry.hours is not None])}h"
+        )
     return result
 
 
@@ -249,7 +257,7 @@ def timesheet_month(month: int, include_future: bool):
         result = list(
             filter(
                 lambda entry: entry.post_date.month == month,
-                timesheet(week, client),
+                timesheet(week, client, first_day_mask=first_day),
             )
         )
         if len(result):
