@@ -10,7 +10,7 @@ from rich.table import Table as RichTable
 from sqlalchemy import Column, String, Table, delete, select
 from sqlalchemy_utils.types import JSONType, StringEncryptedType
 
-from ttcli.ApiClient import ApiClient
+from ttcli.ApiClient import ApiClient, get_all_services, get_service_by_name
 from ttcli.db import Session, mapper_registry, requires_db
 from ttcli.key import get_key
 
@@ -131,3 +131,14 @@ def clear_service_config(service: Type[ApiClient]):
     with Session() as session:
         session.execute(delete(DBConfig).where(DBConfig.service == name))
         session.commit()
+
+
+@configure_command.command(name="delete")
+@click.argument(
+    "service",
+    nargs=1,
+    type=click.Choice([service.name() for service in get_all_services()]),
+)
+def delete_config(service: str):
+    Service = get_service_by_name(service)
+    clear_service_config(Service)

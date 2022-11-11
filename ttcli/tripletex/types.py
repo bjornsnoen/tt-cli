@@ -53,3 +53,31 @@ class EmployeeDTO(BaseModel):
     class Config(BaseConfig):
         alias_generator = camel_case
         allow_population_by_field_name = True
+
+
+class ProjectDTO(BaseModel):
+    id: int
+    name: str
+    display_name: str
+    number: int
+
+    class Config(BaseConfig):
+        alias_generator = camel_case
+        allow_population_by_field_name = True
+
+
+class ActivityDTO(BaseModel):
+    id: int
+    is_project_activity: bool
+    name: str
+    display_name: str
+
+    class Config(BaseConfig):
+        alias_generator = camel_case
+        allow_population_by_field_name = True
+
+
+class ConfiguredActivity(BaseModel):
+    activity: ActivityDTO
+    project: ProjectDTO | None = None
+    is_project: bool

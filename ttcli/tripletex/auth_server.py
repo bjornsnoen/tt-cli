@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from os import getenv
 
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, HTTPException
 from requests import put
 
 from ttcli.tripletex.types import ApiTokenEnvelope, SessionTokenResponse
@@ -30,9 +30,13 @@ def create_token(employee_token: str = Body(alias="employeeToken", embed=True)):
         },
     )
     data = response.json()
-    api_token = ApiTokenEnvelope(**data).value
-    response = SessionTokenResponse(**api_token.dict() | {"api_url": api_url})
-    return response
+    try:
+        api_token = ApiTokenEnvelope(**data).value
+        response = SessionTokenResponse(**api_token.dict() | {"api_url": api_url})
+        return response
+    except:
+        print(data)
+        raise HTTPException(401)
 
 
 if __name__ == "__main__":

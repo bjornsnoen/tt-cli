@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from json import dumps, loads
 from os import environ, getenv
@@ -5,7 +6,6 @@ from textwrap import dedent
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
-from pydantic import AnyHttpUrl, BaseModel, HttpUrl
 from requests import JSONDecodeError, Session, post
 from rich.console import Console
 from rich.prompt import IntPrompt, Prompt
@@ -20,12 +20,17 @@ from ttcli.config.config import (
     write_config,
 )
 from ttcli.output import print
-from ttcli.tripletex.types import EmployeeDTO, SessionTokenResponse
+from ttcli.tripletex.types import (
+    ActivityDTO,
+    ConfiguredActivity,
+    EmployeeDTO,
+    ProjectDTO,
+    SessionTokenResponse,
+)
 
 TT_EMPLOYEE_TOKEN_KEY = "TT_EMPLOYEE_TOKEN"
 TT_SERVICE_URL_KEY = "TT_SERVICE_URL"
-TT_DEFAULT_ACTIVITY_ID_KEY = "TT_DEFAULT_ACTIVITY"
-TT_DEFAULT_PROJECT_ID_KEY = "TT_DEFAULT_PROJECT_ID_KEY"
+TT_CONFIGURED_ACTIVITY_KEY = "TT_CONFIGURED_ACTIVITY"
 
 
 class TripleTex(ApiClient):
@@ -96,41 +101,61 @@ class TripleTex(ApiClient):
         hours: float,
         description: str,
         day: date = date.today(),
-        activity_id: int = int(getenv(TT_DEFAULT_ACTIVITY_ID_KEY, default=-1)),
-        project_id: int = int(getenv(TT_DEFAULT_PROJECT_ID_KEY, default=-1)),
+        activity_id: int | None = None,
+        project_id: int | None = None,
     ) -> dict:
         self.login
-        activity_id = int(activity_id)
-        project_id = int(project_id)
-
-        if not activity_id or not project_id:
+        try:
+            configured_activity = ConfiguredActivity(
+                **loads(getenv(TT_CONFIGURED_ACTIVITY_KEY, ""))
+            )
+            activity_id = (
+                activity_id if activity_id else configured_activity.activity.id
+            )
+            project_id = (
+                project_id
+                if project_id
+                else (
+                    configured_activity.project.id
+                    if configured_activity.project
+                    else None
+                )
+            )
+        except:
             raise ConfigurationException(
                 message="Couldn't figure out which tripletex project or activity to log hours to, please run [code]tt-cli configure tripletex[/code]"
             )
+
+        post_params = {
+            "activity": {"id": activity_id},
+            "employee": {"id": self.employee.employee_id},
+            "date": day.isoformat(),
+            "hours": hours,
+            "comment": description,
+        }
+        if project_id:
+            post_params["project"] = {"id": project_id}
+
         result: dict = loads(
             self.api_post(
                 "timesheet/entry",
-                post_params={
-                    "activity": {"id": activity_id},
-                    "project": {"id": project_id},
-                    "employee": {"id": self.employee.employee_id},
-                    "date": day.isoformat(),
-                    "hours": hours,
-                    "comment": description,
-                },
+                post_params=post_params,
             )
         )
         if result.get("status", 200) == 409:
             next_day = day + timedelta(days=1)
+            params = {
+                "dateFrom": day.isoformat(),
+                "dateTo": next_day.isoformat(),
+                "activityId": configured_activity.activity.id,
+            }
+            if project_id:
+                params["projectId"] = project_id
+
             conflict: dict = loads(
                 self.api_get(
                     "timesheet/entry",
-                    params={
-                        "dateFrom": day.isoformat(),
-                        "dateTo": next_day.isoformat(),
-                        "projectId": project_id,
-                        "activityId": activity_id,
-                    },
+                    params=params,
                 )
             )
             if conflict["fullResultSize"] < 1:
@@ -177,6 +202,39 @@ class TripleTex(ApiClient):
             raise ConfigurationException(
                 message="Missing password", missing_key=TT_SERVICE_URL_KEY
             )
+
+    @dataclass
+    class RecentActivities:
+        general: list[ActivityDTO]
+        project: list[tuple[ProjectDTO, list[ActivityDTO]]]
+
+    def get_recent_activities(self) -> RecentActivities:
+        projects_resp = loads(self.api_get("/timesheet/entry/>recentProjects"))[
+            "values"
+        ]
+        projects = [ProjectDTO(**proj) for proj in projects_resp]
+        general_activities = loads(self.api_get("/timesheet/entry/>recentActivities"))
+
+        result = self.RecentActivities(
+            general=[ActivityDTO(**act) for act in general_activities["values"]],
+            project=[],
+        )
+
+        for project in projects:
+            project_activities_resp = loads(
+                self.api_get(
+                    "/timesheet/entry/>recentActivities",
+                    params={"projectId": project.id},
+                )
+            )
+            result.project.append(
+                (
+                    project,
+                    [ActivityDTO(**act) for act in project_activities_resp["values"]],
+                )
+            )
+
+        return result
 
 
 @click.group(
@@ -247,9 +305,7 @@ def find_activities(name: str, json: bool):
 )
 @click.argument("hours", type=float)
 @click.argument("comment")
-@click.option(
-    "-a", "--activity-id", type=int, default=getenv(TT_DEFAULT_ACTIVITY_ID_KEY)
-)
+@click.option("-a", "--activity-id", type=int)
 @click.option(
     "-d",
     "--day",
@@ -292,23 +348,12 @@ def _configure():
     try:
         client = TripleTex()
         client.login
-        projects = loads(
-            client.api_get(
-                "/timesheet/entry/>recentProjects",
-                params={
-                    "fields": "projectActivities(id,activity(id,displayName),project(id,displayName))"
-                },
-            )
-        )["values"]
-        activities = [
-            projectActivity
-            for project in projects
-            for projectActivity in project["projectActivities"]
-        ]
     except JSONDecodeError:
-        print("[red]Wrong username or password[/red]")
+        print("[red]Wrong token or url[/red]")
         clear_service_config(TripleTex)
         return 1
+
+    recents = client.get_recent_activities()
 
     console = Console(highlight=False)
     table = Table(title="[purple]Activitites[/purple]")
@@ -316,30 +361,48 @@ def _configure():
     table.add_column("Project", justify="center")
     table.add_column("Activity", justify="center")
 
-    for idx, activity in enumerate(activities):
+    idx = 1
+    choice_values: list[ConfiguredActivity] = []
+
+    for project, activities in recents.project:
+        for activity in activities:
+            table.add_row(
+                str(idx),
+                project.display_name,
+                activity.display_name,
+            )
+            choice_values.append(
+                ConfiguredActivity(activity=activity, project=project, is_project=True)
+            )
+            idx += 1
+
+    for activity in recents.general:
         table.add_row(
-            str(idx + 1),
-            activity["project"]["displayName"],
-            activity["activity"]["displayName"],
+            str(idx),
+            "General",
+            activity.display_name,
         )
+        choice_values.append(ConfiguredActivity(activity=activity, is_project=False))
+        idx += 1
+
     console.print(table)
-    idx = (
+
+    chosen_activity_idx = (
         IntPrompt.ask(
             "Which should be the default activity to log hours to?",
-            choices=[str(i) for i in range(1, len(activities) + 1)],
-            show_choices=False,
+            choices=[str(i) for i in range(1, idx)],
+            show_choices=True,
         )
         - 1
     )
-    selected_activity = activities[idx]
+    selected_activity = choice_values[chosen_activity_idx]
 
     write_config(
         TripleTex,
         {
             TT_EMPLOYEE_TOKEN_KEY: employee_token,
             TT_SERVICE_URL_KEY: login_service_url,
-            TT_DEFAULT_ACTIVITY_ID_KEY: str(selected_activity["activity"]["id"]),
-            TT_DEFAULT_PROJECT_ID_KEY: str(selected_activity["project"]["id"]),
+            TT_CONFIGURED_ACTIVITY_KEY: selected_activity.json(),
         },
     )
 
@@ -348,7 +411,7 @@ def _configure():
             f"""
             [green]Success![/green]
             You are good to go :partying_face:
-            All hours will be logged to [yellow]{selected_activity["project"]["displayName"]} {selected_activity["activity"]["displayName"]}[/yellow]
+            All hours will be logged to [yellow]{selected_activity.project.display_name if selected_activity.project else ''} {selected_activity.activity.display_name}[/yellow]
             """
         )
     )

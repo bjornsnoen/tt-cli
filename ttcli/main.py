@@ -15,6 +15,7 @@ from ttcli.ApiClient import (
     ConfigurationException,
     get_all_services,
     get_configured_services,
+    get_configured_services_instances,
 )
 from ttcli.NoaWorkbook import noa_command
 from ttcli.output import print
@@ -47,7 +48,7 @@ def list(configured: bool):
             print(service.name())
     else:
         for service in get_configured_services():
-            print(service.__class__.name())
+            print(service.name())
 
 
 days_of_week = [
@@ -120,7 +121,7 @@ def write_to_all_csv(file: BufferedReader, lock: bool):
 def write_to_all(hours: float, description: str, day: datetime, lock: bool):
     """Write the given data to all known timesheet services."""
     day_actual = day.date()
-    services = get_configured_services()
+    services = get_configured_services_instances()
 
     for service in services:
         print(f"[yellow]Writing to {service.name()}[/yellow]", nl=False)

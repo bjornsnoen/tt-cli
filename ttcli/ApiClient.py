@@ -72,7 +72,7 @@ def get_all_services() -> Iterable[Type[ApiClient]]:
     return TripleTex, Severa, NoaWorkbook
 
 
-def get_configured_services() -> Iterable[ApiClient]:
+def get_configured_services_instances() -> Iterable[ApiClient]:
     services = []
     for cls in get_all_services():
         try:
@@ -81,3 +81,13 @@ def get_configured_services() -> Iterable[ApiClient]:
             pass
 
     return services
+
+
+def get_configured_services() -> Iterable[Type[ApiClient]]:
+    services = get_configured_services_instances()
+    return [service.__class__ for service in services]
+
+
+def get_service_by_name(name: str) -> Type[ApiClient]:
+    lookup = {service.name(): service for service in get_all_services()}
+    return lookup[name]
