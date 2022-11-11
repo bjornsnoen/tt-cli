@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ttcli"
-version = "1.8.0"
+version = "1.8.1"
 description = "Time tracking tool for the cli"
 readme = "README.md"
 authors = ["Bjørn Snoen <bjorn@fink.no>"]

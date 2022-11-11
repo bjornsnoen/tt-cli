@@ -28,13 +28,28 @@ may have shown some warnings about adding a directory to your PATH. Do so.
 * `tt-cli` the main program
 * `tt-a` a shortcut to `tt-cli write-to-all`
 
-Next you need to set login to your services. Check `tt-cli configure`. To find the
-tripletex activity id you may use the `tt-cli tripletex find` command. That's
-it, now refer back to [usage](#what-can-it-do).
+Next you need to login to your services. Check `tt-cli configure` for a list.  
+That's it, now refer back to [usage](#what-can-it-do).
+
+### Extra notes on configuring TripleTex
+
+#### Service url
+TripleTex needs an external auth broker to be configured. When you run `tt-cli configure tripletex`
+you will be prompted for your employee token and a service url. The service url will
+be the auth broker. This needs to be a full url, like "https://example.com/login" _including the `/login` part_.
+Ask whoever configured the broker in your organization for the url and just paste it directly.
+
+#### Employee token
+See (this link)[https://hjelp.tripletex.no/hc/no/articles/4409557117713-API-Opprette-brukern%C3%B8kkel-Integrasjon-for-sluttbruker-og-regnskapsf%C3%B8rer]
+Ask whoever configured the integration for which name to put in the application name field as this is important.
+Select the option for giving the token the same rights as the current user.
+
+You can alawys rotate the generated token, so just make sure you copy it before clicking ok once TripleTex has generated it.
+
 
 ## What can it do?
 Currently it can log hours to Visma Severa, Noa Workbook, and Tripletex, with
-some caveats. You do this with the bundled commands `tt-cli write-to-all 7.5
+some caveats. You do this with the bundled commands, so `tt-cli write-to-all 7.5
 "Today I wrote all the tests"` for example puts 7.5 hours in your configured
 systems with the comment "Today I wrote all the tests". You can see help text
 for any command by passing `--help`. A good starting point would be `tt-cli
@@ -53,18 +68,10 @@ for any command by passing `--help`. A good starting point would be `tt-cli
 * Does not lock ("approve") hours for now
 
 ### Tripletex
-Their API is [open source](https://github.com/tripletex/tripletex-api2/), and
-they have an open test environment. That's all I've got access to, because in
-order to get a consumer token and an employee token, you need to be a known
-integration partner, which we are not (yet). Thus:
-
-* You need to supply your own consumer token as well as employee token
-* You will need to get TripleTex to register a new app for you for your users to register employee tokens against
-
-Getting an employee token is simple enough as long as you've got the rights,
-[ref their docs](https://tripletex.no/execute/docViewer?articleId=853&language=0), 
-however afaik there is no way to get a consumer token without being an
-integration partner.
+You will need to get TripleTex to create an app and a consumer token for you in order to log hours
+against production. There's a step-by-step guide [here](https://developer.tripletex.no/getting-started/).
+Once they have created your app your employees will need to generate their own employee tokens.
+They have some docs for this [in norwegian](https://hjelp.tripletex.no/hc/no/articles/4409557117713-API-Opprette-brukern%C3%B8kkel-Integrasjon-for-sluttbruker-og-regnskapsf%C3%B8rer)
 
 ## Requirements
 ### Python 3.10
