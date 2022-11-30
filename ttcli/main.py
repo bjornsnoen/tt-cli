@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import csv
 from datetime import date, datetime, timedelta
 from io import BufferedReader
@@ -21,6 +22,7 @@ from ttcli.NoaWorkbook import noa_command
 from ttcli.output import print
 from ttcli.Severa import severa_command
 from ttcli.tripletex.TripleTex import tripletex_command
+from ttcli.utils import days_of_week
 
 
 @click.group(
@@ -49,24 +51,6 @@ def list(configured: bool):
     else:
         for service in get_configured_services():
             print(service.name())
-
-
-days_of_week = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-    "Sun",
-]
 
 
 @cli.command(

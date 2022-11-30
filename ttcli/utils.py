@@ -68,3 +68,21 @@ def get_month_span(
 
 def week_number(day: date) -> int:
     return int(day.strftime("%W"))
+
+
+days_of_week = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+]

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import cached_property
 from json import loads
 from json.decoder import JSONDecodeError
@@ -22,7 +22,13 @@ from ttcli.config.config import (
     source_config,
     write_config,
 )
-from ttcli.utils import get_month_span, get_week_number, get_week_span, typed_cache
+from ttcli.utils import (
+    days_of_week,
+    get_month_span,
+    get_week_number,
+    get_week_span,
+    typed_cache,
+)
 
 NOA_USERNAME_KEY = "NOA_USERNAME"
 NOA_PASSWORD_KEY = "NOA_PASSWORD"
@@ -319,3 +325,32 @@ def configure():
 @configure_command.command(name="noa")
 def configure_subcommand():
     _configure()
+
+
+@noa_command.command()
+@click.argument("hours", type=float)
+@click.argument("description")
+@click.option(
+    "-d",
+    "--date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=date.today().isoformat(),
+)
+@click.option(
+    "-D",
+    "--weekday",
+    type=click.Choice(
+        days_of_week,
+        case_sensitive=False,
+    ),
+)
+def hours(hours: float, description: str, date: datetime, weekday: str):
+    if weekday is not None:
+        weekday_index = days_of_week.index(weekday) % 7
+        monday = date - timedelta(days=date.weekday())
+        date = monday + timedelta(days=weekday_index)
+
+    client = NoaWorkbook()
+    client.write_hours(hours, description, date.date())
+
+    print("[green]Done![/green]")

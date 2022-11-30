@@ -26,7 +26,9 @@ from ttcli.tripletex.types import (
     EmployeeDTO,
     ProjectDTO,
     SessionTokenResponse,
+    TimesheetEntry,
 )
+from ttcli.utils import get_week_number
 
 TT_EMPLOYEE_TOKEN_KEY = "TT_EMPLOYEE_TOKEN"
 TT_SERVICE_URL_KEY = "TT_SERVICE_URL"
@@ -236,6 +238,21 @@ class TripleTex(ApiClient):
 
         return result
 
+    def get_timesheet_week(self, week_number: int) -> list[TimesheetEntry]:
+        result = loads(
+            self.api_get(
+                "/timesheet/week",
+                params={
+                    "weekYear": f"{date.today().year}-{week_number}",
+                    "employeeIds": self.employee.employee_id,
+                    "fields": "timesheetEntries(project(*),activity(*),*)",
+                },
+            )
+        )
+        return [
+            TimesheetEntry(**data) for data in result["values"][0]["timesheetEntries"]
+        ]
+
 
 @click.group(
     cls=HelpColorsGroup, help_headers_color="yellow", help_options_color="green"
@@ -320,10 +337,10 @@ def write_to_other_activity(
     day_actual = day.date()
     tt = TripleTex()
     try:
-        result = tt.write_hours(
+        tt.write_hours(
             hours=hours, description=comment, activity_id=activity_id, day=day_actual
         )
-        click.echo(dumps(result))
+        print("f[green]Done![/green]")
     except ConfigurationException as e:
         print(f"[blink]Warning:[/blink] {e.message}")
 
@@ -425,6 +442,22 @@ def configure():
 @configure_command.command(name="tripletex")
 def configure_subcommand():
     _configure()
+
+
+@tripletex_command.command()
+@click.argument("week", type=int, default=get_week_number())
+def timesheet(week: int):
+    client = TripleTex()
+    entries = client.get_timesheet_week(week)
+
+    for entry in entries:
+        when = entry.date
+        day = when.strftime("%A")
+        hour_color = "yellow" if entry.hours == 7.5 else "red"
+
+        print(f"[green]{day}[/green] [bright_black]({when.isoformat()})[/bright_black]")
+        print(f"[{hour_color}]{entry.hours}[/{hour_color}]: {entry.comment}")
+        print("[bright_black]--[/bright_black]")
 
 
 if __name__ == "__main__":

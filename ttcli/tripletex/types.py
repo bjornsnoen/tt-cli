@@ -81,3 +81,15 @@ class ConfiguredActivity(BaseModel):
     activity: ActivityDTO
     project: ProjectDTO | None = None
     is_project: bool
+
+
+class TimesheetEntry(BaseModel):
+    activity: ActivityDTO
+    project: ProjectDTO
+    date: date
+    hours: float
+    comment: str
+
+    class Config(BaseConfig):
+        alias_generator = camel_case
+        allow_population_by_field_name = True
