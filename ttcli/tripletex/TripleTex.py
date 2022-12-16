@@ -79,7 +79,7 @@ class TripleTex(ApiClient):
             return self.employee
 
         if token := self.get_saved_session_token():
-            if token.expiration_date >= date.today():
+            if token.expiration_date > date.today():
                 self.login = token
                 return self.employee
 
