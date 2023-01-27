@@ -119,7 +119,7 @@ class TripleTex(ApiClient):
                 if project_id
                 else (
                     configured_activity.project.id
-                    if configured_activity.project
+                    if configured_activity.project and activity_id == configured_activity.activity.id
                     else None
                 )
             )
@@ -149,7 +149,7 @@ class TripleTex(ApiClient):
             params = {
                 "dateFrom": day.isoformat(),
                 "dateTo": next_day.isoformat(),
-                "activityId": configured_activity.activity.id,
+                "activityId": activity_id,
             }
             if project_id:
                 params["projectId"] = project_id
