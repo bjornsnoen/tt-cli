@@ -257,9 +257,13 @@ def timesheet_week(week: int):
 def timesheet_month(month: int, include_future: bool):
     client = NoaWorkbook()
     first_day, last_day = get_month_span(month, include_future=include_future)
+    first_week, last_week = get_week_number(first_day), get_week_number(last_day)
+    if first_week > last_week and first_week == 52:
+        first_week = 1
+
     weeks = []
 
-    for week in range(get_week_number(first_day), get_week_number(last_day) + 1):
+    for week in range(first_week, last_week + 1):
         result = list(
             filter(
                 lambda entry: entry.post_date.month == month,
