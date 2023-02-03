@@ -227,7 +227,7 @@ def timesheet(
 
     for entry in result:
         hours = entry.hours
-        when = entry.post_date.date()
+        when = entry.registration_date.date()
         description = entry.description
         day = when.strftime("%A")
         hour_color = "yellow" if hours == 7.5 else "red"
@@ -358,3 +358,7 @@ def hours(hours: float, description: str, date: datetime, weekday: str):
     client.write_hours(hours, description, date.date())
 
     print("[green]Done![/green]")
+
+
+if __name__ == "__main__":
+    timesheet(3)
