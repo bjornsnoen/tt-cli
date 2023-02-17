@@ -119,7 +119,8 @@ class TripleTex(ApiClient):
                 if project_id
                 else (
                     configured_activity.project.id
-                    if configured_activity.project and activity_id == configured_activity.activity.id
+                    if configured_activity.project
+                    and activity_id == configured_activity.activity.id
                     else None
                 )
             )
@@ -249,9 +250,13 @@ class TripleTex(ApiClient):
                 },
             )
         )
-        return [
-            TimesheetEntry(**data) for data in result["values"][0]["timesheetEntries"]
-        ]
+        return sorted(
+            [
+                TimesheetEntry(**data)
+                for data in result["values"][0]["timesheetEntries"]
+            ],
+            key=lambda entry: entry.date,
+        )
 
 
 @click.group(
@@ -333,7 +338,8 @@ def write_to_other_activity(
     hours: float, comment: str, activity_id: int, day: datetime
 ):
     """Write hours to an activity. By default we write to the activity defined by the TRIPLETEX_DEFAULT_ACTIVITY_ID
-    environment variable, but a different variable can be specified via the -a option."""
+    environment variable, but a different variable can be specified via the -a option.
+    """
     day_actual = day.date()
     tt = TripleTex()
     try:
@@ -449,17 +455,30 @@ def configure_subcommand():
 def timesheet(week: int):
     client = TripleTex()
     entries = client.get_timesheet_week(week)
+    date_groups = dict()
 
     for entry in entries:
-        when = entry.date
-        day = when.strftime("%A")
-        hour_color = "yellow" if entry.hours == 7.5 else "red"
+        if entry.date not in date_groups:
+            date_groups[entry.date] = []
+        date_groups[entry.date].append(entry)
 
+    sum_hours = 0
+    for when, date_group in date_groups.items():
+        day = when.strftime("%A")
         print(f"[green]{day}[/green] [bright_black]({when.isoformat()})[/bright_black]")
-        print(f"[{hour_color}]{entry.hours}[/{hour_color}]: {entry.comment}")
+
+        for entry in date_group:
+            hour_color = "yellow" if entry.hours == 7.5 else "red"
+            print(
+                f"[{hour_color}]{entry.hours}[/{hour_color}] [bright_black]({entry.project.name if entry.project else entry.activity.name})[/bright_black]: {entry.comment}"
+            )
+            sum_hours += entry.hours
+
         print("[bright_black]--[/bright_black]")
+
+    print(f"[green]Total w{week}:[/green] {sum_hours}h")
 
 
 if __name__ == "__main__":
     tt = TripleTex()
-    _configure()
+    print(tt.employee)

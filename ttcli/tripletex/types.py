@@ -85,7 +85,7 @@ class ConfiguredActivity(BaseModel):
 
 class TimesheetEntry(BaseModel):
     activity: ActivityDTO
-    project: ProjectDTO
+    project: ProjectDTO | None
     date: date
     hours: float
     comment: str
