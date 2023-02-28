@@ -191,7 +191,11 @@ class NoaWorkbook(ApiClient):
             )
         )
 
-        return [NoaTimesheetEntry.parse_obj(entry) for entry in response]
+        return [
+            NoaTimesheetEntry.parse_obj(entry)
+            for entry in response
+            if "TaskId" in entry
+        ]
 
     def get_logged_during_week(self, week: int) -> list[NoaTimesheetEntry]:
         return [entry for entry in self.get_week_days(week) if entry.hours is not None]
