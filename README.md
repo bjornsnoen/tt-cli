@@ -74,9 +74,9 @@ Once they have created your app your employees will need to generate their own e
 They have some docs for this [in norwegian](https://hjelp.tripletex.no/hc/no/articles/4409557117713-API-Opprette-brukern%C3%B8kkel-Integrasjon-for-sluttbruker-og-regnskapsf%C3%B8rer)
 
 ## Requirements
-### Python 3.10
+### Python ^3.10
 This project uses PEP 612, because it's amazing, and therefore it needs python
-3.10. If your system doesn't have python 3.10, I recommend looking into
+3.10 or greater. If your system doesn't have python 3.10, I recommend looking into
 [asdf](https://asdf-vm.com/) or [pyenv](https://github.com/pyenv/pyenv) to work
 around aging os distributions.
 

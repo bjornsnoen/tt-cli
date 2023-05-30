@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 from json import dumps, loads
 from os import environ, getenv
 from textwrap import dedent
+from typing import Optional
 
 import click
 from click_help_colors import HelpColorsCommand, HelpColorsGroup
@@ -28,7 +29,7 @@ from ttcli.tripletex.types import (
     SessionTokenResponse,
     TimesheetEntry,
 )
-from ttcli.utils import get_week_number
+from ttcli.utils import get_month_span, get_week_number
 
 TT_EMPLOYEE_TOKEN_KEY = "TT_EMPLOYEE_TOKEN"
 TT_SERVICE_URL_KEY = "TT_SERVICE_URL"
@@ -450,10 +451,14 @@ def configure_subcommand():
     _configure()
 
 
-@tripletex_command.command()
-@click.argument("week", type=int, default=get_week_number())
-def timesheet(week: int):
-    client = TripleTex()
+def timesheet(
+    week: int,
+    client: Optional[TripleTex] = None,
+    first_day_mask: Optional[date] = None,
+) -> list[TimesheetEntry]:
+    if not client:
+        client = TripleTex()
+
     entries = client.get_timesheet_week(week)
     date_groups = dict()
 
@@ -461,6 +466,10 @@ def timesheet(week: int):
         if entry.date not in date_groups:
             date_groups[entry.date] = []
         date_groups[entry.date].append(entry)
+
+    entries.sort(key=lambda entry: entry.date)
+    if first_day_mask:
+        entries = [entry for entry in entries if entry.date >= first_day_mask]
 
     sum_hours = 0
     for when, date_group in date_groups.items():
@@ -476,7 +485,53 @@ def timesheet(week: int):
 
         print("[bright_black]--[/bright_black]")
 
-    print(f"[green]Total w{week}:[/green] {sum_hours}h")
+    if first_day_mask and len(entries) == 0:
+        pass
+    else:
+        print(f"[green]Total w{week}:[/green] {sum_hours}h")
+
+    return entries
+
+
+@tripletex_command.command(name="timesheet")
+@click.argument("week", type=int, default=get_week_number())
+def timesheet_cmd(week: int):
+    timesheet(week)
+
+
+@tripletex_command.command()
+@click.argument("month", type=int, default=datetime.today().month)
+@click.option("--include-future/--no-include-future", default=False)
+def timesheet_month(month: int, include_future: bool):
+    client = TripleTex()
+    first_day, last_day = get_month_span(month, include_future=include_future)
+    first_week, last_week = get_week_number(first_day), get_week_number(last_day)
+    if first_week > last_week and first_week == 52:
+        first_week = 1
+
+    weeks = []
+
+    for week in range(first_week, last_week + 1):
+        result: list[TimesheetEntry] = list(
+            filter(
+                lambda entry: entry.date.month == month,
+                timesheet(week, client, first_day_mask=first_day),
+            )
+        )
+        if len(result):
+            weeks.append(result)
+        print("[bright_black bold]--\n[/bright_black bold]")
+
+    print(f"\n[yellow bold]Month summary for {first_day.strftime('%B')}:[/yellow bold]")
+    month_total = 0
+    for result in weeks:
+        week_total = sum([entry.hours for entry in result])
+        month_total += week_total
+        week_number = result[0].date.strftime("%W")
+        print(f"[green]Total w{week_number}:[/green] {week_total}h")
+
+    print("[bright_black]--[/bright_black]")
+    print(f"[green]Total {first_day.strftime('%b')}:[/green] {month_total}")
 
 
 if __name__ == "__main__":
