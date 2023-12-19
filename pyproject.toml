@@ -32,6 +32,9 @@ SQLAlchemy-Utils = "^0.38.3"
 cryptography = "^37.0.4"
 keyring = "^23.7.0"
 humps = "^0.2.2"
+weasyprint = "^60.0"
+jinja2 = "^3.1.2"
+babel = "^2.12.1"
 
 [tool.poetry.dev-dependencies]
 black = "*"

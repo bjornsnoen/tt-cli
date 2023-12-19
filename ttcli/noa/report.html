@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <title>Report</title>
+    <style>
+      h1 {
+        text-align: center;
+      }
+      h3 {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      h4 {
+        margin-top: -2.5rem;
+        margin-left: -1rem;
+      }
+      section {
+        border: 1px solid black;
+        padding: 1rem;
+        margin: 1rem;
+        margin-bottom: 3rem;
+        page-break-inside: avoid;
+      }
+      p {
+        font-size: 0.8rem;
+        text-indent: -1.5rem;
+        padding-left: 1.5rem;
+      }
+      p:first-line {
+        text-indent: 0;
+      }
+      span.day-desc {
+        font-style: italic;
+        text-transform: capitalize;
+      }
+      span.day-hours {
+        font-size: 0.7rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Timerapport for {{ month }}, {{ year }}</h1>
+    <h3>Navn: {{ name }}</h3>
+    <main>
+      {% for week_number, week in weeks.items() %}
+      <section>
+        <h4>Uke {{ week_number }}</h4>
+        {% for entry in week.entries %}
+        <p>
+          <span class="day-desc">{{entry.day}}:</span> {{ entry.description }},
+          <span class="day-hours">({{ entry.hours }} timer)</span>
+        </p>
+        {% endfor %}
+
+        <p style="font-weight: bold">Antall timer: {{ week.total }}</p>
+      </section>
+      {% endfor %}
+      <div>
+        <h4>Totalt antall timer: {{ total }}</h4>
+      </div>
+    </main>
+  </body>
+</html>

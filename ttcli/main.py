@@ -18,7 +18,7 @@ from ttcli.ApiClient import (
     get_configured_services,
     get_configured_services_instances,
 )
-from ttcli.NoaWorkbook import noa_command
+from ttcli.noa.NoaWorkbook import noa_command
 from ttcli.output import print
 from ttcli.Severa import severa_command
 from ttcli.tripletex.TripleTex import tripletex_command

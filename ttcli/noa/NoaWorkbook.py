@@ -1,19 +1,22 @@
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import cached_property
 from json import loads
 from json.decoder import JSONDecodeError
 from os import environ, getenv
+from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
 import click
+from babel.dates import format_date
 from click_help_colors.core import HelpColorsGroup
-from inflection import camelize
-from pydantic import BaseModel, Extra
+from jinja2 import Environment, FileSystemLoader
 from requests.sessions import Session
 from rich import print
 from rich.console import Console
 from rich.prompt import Prompt
+from weasyprint import HTML
 
 from ttcli.ApiClient import ApiClient, ConfigurationException
 from ttcli.config.config import (
@@ -21,6 +24,11 @@ from ttcli.config.config import (
     configure_command,
     source_config,
     write_config,
+)
+from ttcli.noa.types import (
+    NoaDateVisualization,
+    NoaTimesheetEntry,
+    NoaTimesheetEntryPartial,
 )
 from ttcli.utils import (
     days_of_week,
@@ -32,90 +40,6 @@ from ttcli.utils import (
 
 NOA_USERNAME_KEY = "NOA_USERNAME"
 NOA_PASSWORD_KEY = "NOA_PASSWORD"
-
-
-class NoaTimesheetEntryPartial(BaseModel):
-    activity_id: int
-    approval_status: int
-    billable: bool
-    correction: int
-    cost: float
-    cost_currency_amount: float
-    cost_currency_id: int
-    cost_method: int
-    create_date: datetime
-    create_resource_id: int
-    deleted_marked: bool
-    description_required: bool
-    hours_moved: float
-    id: int
-    job_id: int
-    journal_number: int
-    post_date: datetime
-    pricelist_id: int
-    public: bool
-    registration_date: datetime
-    resource_id: int
-    sale: float
-    sale_currency_amount: float
-    sale_currency_id: int
-    sequence_number: int
-    tariff_additional_percent_cost: float
-    tariff_additional_percent_ic_sale: float
-    tariff_additional_percent_sale: float
-    task_id: int
-    update_date: datetime
-    update_resource_id: int
-    update_type: int
-    description: Optional[str] = None
-    has_approved_resource_initals: Optional[str] = None
-    hours: Optional[float] = None
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-
-
-class NoaTimesheetEntry(NoaTimesheetEntryPartial):
-    access: bool
-    can_edit: bool
-    can_edit_week: bool
-    lock_description: str
-    lock_number: int
-    locked: bool
-    pinned: bool
-    sequence_has_entry: bool
-    task_hours: float
-    task_hours_time_registration: float
-    task_phase_name: str
-    is_costing_code_valid: bool
-
-
-class NoaDateVisualization(BaseModel):
-    access: bool
-    activity_id: int
-    activity_text: str
-    customer_id: int
-    customer_name: str
-    first_reg_date: str
-    id: int
-    job_id: int
-    job_name: str
-    pinned: bool
-    project_id: int
-    project_name: str
-    resource_id: int
-    sequence_number: int
-    task_description: str
-    task_hours: float
-    task_hours_time_registration: float
-    task_id: int
-    task_phase_name: str
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
 
 
 class NoaWorkbook(ApiClient):
@@ -138,6 +62,7 @@ class NoaWorkbook(ApiClient):
     def is_configured(self) -> bool:
         return all(k in environ for k in (NOA_USERNAME_KEY, NOA_PASSWORD_KEY))
 
+    @cached_property
     def login(self):
         response = self.api_post(
             "/auth/handshake",
@@ -151,7 +76,7 @@ class NoaWorkbook(ApiClient):
 
     @cached_property
     def employee_id(self) -> int:
-        return self.login()["Id"]
+        return self.login["Id"]
 
     def lock_day(self, day: date = date.today()):
         pass
@@ -364,5 +289,64 @@ def hours(hours: float, description: str, date: datetime, weekday: str):
     print("[green]Done![/green]")
 
 
+@noa_command.command()
+@click.argument("month", type=int, default=datetime.today().month)
+@click.option("--include-future/--no-include-future", default=False)
+@click.option("--report")
+def report(month: int, include_future: bool, report: Path | None):
+    client = NoaWorkbook()
+    first_day, last_day = get_month_span(month, include_future=include_future)
+    first_week, last_week = get_week_number(first_day), get_week_number(last_day)
+    if first_week > last_week and first_week == 52:
+        first_week = 1
+
+    class SimplifiedEntry:
+        day: str
+        hours: float
+        description: str
+
+        def __init__(self, entry: NoaTimesheetEntryPartial):
+            self.day = format_date(entry.post_date, format="EEEE", locale="nb_NO")
+            self.hours = entry.hours or 0
+            self.description = entry.description or ""
+
+    @dataclass
+    class Week:
+        entries: list[SimplifiedEntry]
+        total: float
+
+    weeks: dict[int, Week] = {}
+
+    for week in range(first_week, last_week + 1):
+        result: list[NoaTimesheetEntryPartial] = list(
+            filter(
+                lambda entry: entry.post_date.month == month,
+                timesheet(week, client, first_day_mask=first_day),
+            )
+        )
+        if len(result):
+            weeks[week] = Week(
+                entries=[SimplifiedEntry(entry) for entry in result],
+                total=sum([entry.hours for entry in result if entry.hours is not None]),
+            )
+
+    month_total = sum([week.total for week in weeks.values()])
+
+    if report:
+        env = Environment(loader=FileSystemLoader(Path(__file__).parent))
+        template = env.get_template("report.html")
+        html_out = template.render(
+            {
+                "weeks": weeks,
+                "month_total": month_total,
+                "month": format_date(first_day, format="MMMM", locale="nb_NO"),
+                "year": first_day.year,
+                "name": client.login["Name"],
+                "total": month_total,
+            }
+        )
+        HTML(string=html_out).write_pdf(report)
+
+
 if __name__ == "__main__":
-    timesheet(3)
+    timesheet(week=datetime.today().isocalendar().week)

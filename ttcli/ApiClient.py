@@ -65,7 +65,7 @@ class ConfigurationException(BaseException):
 
 
 def get_all_services() -> Iterable[Type[ApiClient]]:
-    from ttcli.NoaWorkbook import NoaWorkbook
+    from ttcli.noa.NoaWorkbook import NoaWorkbook
     from ttcli.Severa import Severa
     from ttcli.tripletex.TripleTex import TripleTex
 
