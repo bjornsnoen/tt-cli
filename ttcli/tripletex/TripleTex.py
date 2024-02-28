@@ -95,7 +95,7 @@ class TripleTex(ApiClient):
     @login.setter
     def login(self, value: SessionTokenResponse):
         self.client.auth = ("0", value.token)
-        self.base_url = value.api_url.rstrip("/")
+        self.base_url = str(value.api_url).rstrip("/")
         self._token = value
         self.persist_session_token(value)
 

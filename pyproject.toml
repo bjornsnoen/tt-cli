@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ttcli"
-version = "1.13.0"
+version = "1.14.0"
 description = "Time tracking tool for the cli"
 readme = "README.md"
 authors = ["Bjørn Snoen <bjorn@fink.no>"]
@@ -22,7 +22,7 @@ python-dateutil = "*"
 python-dotenv = "*"
 requests = "*"
 rich = "*"
-pydantic = "^1.9.0"
+pydantic = "^2.6.3"
 typing-extensions = "^4.1.1"
 inflection = "^0.5.1"
 SQLAlchemy = "^1.4.39"
@@ -41,7 +41,7 @@ black = "*"
 isort = "*"
 
 [tool.poetry.group.tt-auth.dependencies]
-fastapi = {extras = ["all"], version = "^0.85.0"}
+fastapi = {extras = ["all"], version = "^0.110.0"}
 
 [tool.pyright]
 include = ["ttcli"]

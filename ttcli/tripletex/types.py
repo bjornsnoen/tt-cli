@@ -2,27 +2,37 @@ from datetime import date
 from re import match
 
 from humps.camel import case as camel_case
-from pydantic import BaseConfig, BaseModel, HttpUrl, validator
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
+
+
+def is_http_url(value) -> bool:
+    class TempModel(BaseModel):
+        url: HttpUrl
+
+    try:
+        TempModel(url=value)
+        return True
+    except ValueError:
+        return False
 
 
 class TripletexToken(BaseModel):
     id: int
     url: HttpUrl
 
-    @validator("url", pre=True)
+    @field_validator("url", mode="before")
+    @classmethod
     def inject_scheme(cls, url: str | HttpUrl):
-        """TripleTex respons with urls that omit the scheme, which is required"""
-        if isinstance(url, HttpUrl):
+        """TripleTex responds with urls that omit the scheme, which is required"""
+        if is_http_url(url):
             return url
 
-        if match(r"https?://", url):
+        elif match(r"https?://", str(url)):
             return url
 
         return f"https://{url}"
 
-    class Config(BaseConfig):
-        alias_generator = camel_case
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camel_case, populate_by_name=True)
 
 
 class SessionToken(TripletexToken):
@@ -31,7 +41,7 @@ class SessionToken(TripletexToken):
     employee_token: TripletexToken
     expiration_date: date
     token: str
-    encryption_key: str | None
+    encryption_key: str | None = None
 
 
 class ApiTokenEnvelope(BaseModel):
@@ -49,10 +59,7 @@ class EmployeeDTO(BaseModel):
     employee: dict
     company_id: int
     company: dict
-
-    class Config(BaseConfig):
-        alias_generator = camel_case
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camel_case, populate_by_name=True)
 
 
 class ProjectDTO(BaseModel):
@@ -60,10 +67,7 @@ class ProjectDTO(BaseModel):
     name: str
     display_name: str
     number: int
-
-    class Config(BaseConfig):
-        alias_generator = camel_case
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camel_case, populate_by_name=True)
 
 
 class ActivityDTO(BaseModel):
@@ -71,10 +75,7 @@ class ActivityDTO(BaseModel):
     is_project_activity: bool
     name: str
     display_name: str
-
-    class Config(BaseConfig):
-        alias_generator = camel_case
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camel_case, populate_by_name=True)
 
 
 class ConfiguredActivity(BaseModel):
@@ -85,11 +86,8 @@ class ConfiguredActivity(BaseModel):
 
 class TimesheetEntry(BaseModel):
     activity: ActivityDTO
-    project: ProjectDTO | None
+    project: ProjectDTO | None = None
     date: date
     hours: float
     comment: str
-
-    class Config(BaseConfig):
-        alias_generator = camel_case
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camel_case, populate_by_name=True)

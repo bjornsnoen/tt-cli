@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from inflection import camelize
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 
 
 class NoaTimesheetEntryPartial(BaseModel):
@@ -41,11 +41,7 @@ class NoaTimesheetEntryPartial(BaseModel):
     description: Optional[str] = None
     has_approved_resource_initals: Optional[str] = None
     hours: Optional[float] = None
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True, extra="forbid")
 
 
 class NoaTimesheetEntry(NoaTimesheetEntryPartial):
@@ -83,7 +79,4 @@ class NoaDateVisualization(BaseModel):
     task_hours_time_registration: float
     task_id: int
     task_phase_name: str
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)

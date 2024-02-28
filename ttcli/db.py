@@ -28,7 +28,7 @@ def get_db_location() -> str:
 
 @typed_cache
 def get_engine() -> Engine:
-    return create_engine(get_db_location(), future=True)
+    return create_engine(get_db_location(), future=True)  # type: ignore
 
 
 @cache
