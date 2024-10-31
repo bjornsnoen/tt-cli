@@ -331,7 +331,8 @@ def report(month: int, include_future: bool, report: Path | None):
             )
 
     month_total = sum([week.total for week in weeks.values()])
-
+    month_name = format_date(first_day, format="MMMM", locale="nb_NO")
+    print(f"[green]Total {month_name}:[/green] {month_total}h")
     if report:
         env = Environment(loader=FileSystemLoader(Path(__file__).parent))
         template = env.get_template("report.html")
@@ -339,7 +340,7 @@ def report(month: int, include_future: bool, report: Path | None):
             {
                 "weeks": weeks,
                 "month_total": month_total,
-                "month": format_date(first_day, format="MMMM", locale="nb_NO"),
+                "month": month_name,
                 "year": first_day.year,
                 "name": client.login["Name"],
                 "total": month_total,
