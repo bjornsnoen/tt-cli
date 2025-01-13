@@ -13,7 +13,7 @@ from babel.dates import format_date
 from click_help_colors.core import HelpColorsGroup
 from jinja2 import Environment, FileSystemLoader
 from requests.sessions import Session
-from rich import print
+from rich import print as rprint
 from rich.console import Console
 from rich.prompt import Prompt
 from weasyprint import HTML
@@ -40,6 +40,27 @@ from ttcli.utils import (
 
 NOA_USERNAME_KEY = "NOA_USERNAME"
 NOA_PASSWORD_KEY = "NOA_PASSWORD"
+
+disable_print = False
+
+
+class NoPrintContext:
+    def __init__(self, disable=True):
+        self.disable = disable
+        self.original_print = print
+
+    def __enter__(self):
+        global disable_print
+        disable_print = self.disable
+
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
+        global disable_print
+        disable_print = False
+
+
+def print(*args, **kwargs):
+    if not disable_print:
+        rprint(*args, **kwargs)
 
 
 class NoaWorkbook(ApiClient):
@@ -86,7 +107,7 @@ class NoaWorkbook(ApiClient):
             "json/reply/TimeEntrySheetVisualizationRequest",
             {"ResourceId": self.employee_id, "Date": date.isoformat()},
         )
-        return NoaDateVisualization.parse_obj(loads(result)[0])
+        return NoaDateVisualization.model_validate(loads(result)[0])
 
     def write_hours(
         self, hours: float, description: str, day: date = date.today()
@@ -104,7 +125,7 @@ class NoaWorkbook(ApiClient):
                 "Description": description,
             },
         )
-        return NoaTimesheetEntryPartial.parse_obj(loads(result))
+        return NoaTimesheetEntryPartial.model_validate(loads(result))
 
     @typed_cache
     def get_week_days(self, week: int) -> list[NoaTimesheetEntry]:
@@ -117,7 +138,7 @@ class NoaWorkbook(ApiClient):
         )
 
         return [
-            NoaTimesheetEntry.parse_obj(entry)
+            NoaTimesheetEntry.model_validate(entry)
             for entry in response
             if "TaskId" in entry
         ]
@@ -292,8 +313,9 @@ def hours(hours: float, description: str, date: datetime, weekday: str):
 @noa_command.command()
 @click.argument("month", type=int, default=datetime.today().month)
 @click.option("--include-future/--no-include-future", default=False)
-@click.option("--report")
-def report(month: int, include_future: bool, report: Path | None):
+@click.option("--out", default=datetime.today().strftime("%B") + ".pdf", type=Path)
+@click.option("--no-out", is_flag=True)
+def report(month: int, include_future: bool, out: Path, no_out: bool):
     client = NoaWorkbook()
     first_day, last_day = get_month_span(month, include_future=include_future)
     first_week, last_week = get_week_number(first_day), get_week_number(last_day)
@@ -317,23 +339,27 @@ def report(month: int, include_future: bool, report: Path | None):
 
     weeks: dict[int, Week] = {}
 
-    for week in range(first_week, last_week + 1):
-        result: list[NoaTimesheetEntryPartial] = list(
-            filter(
-                lambda entry: entry.post_date.month == month,
-                timesheet(week, client, first_day_mask=first_day),
+    with NoPrintContext(not no_out):
+        for week in range(first_week, last_week + 1):
+            result: list[NoaTimesheetEntryPartial] = list(
+                filter(
+                    lambda entry: entry.post_date.month == month,
+                    timesheet(week, client, first_day_mask=first_day),
+                )
             )
-        )
-        if len(result):
-            weeks[week] = Week(
-                entries=[SimplifiedEntry(entry) for entry in result],
-                total=sum([entry.hours for entry in result if entry.hours is not None]),
-            )
+            if len(result):
+                weeks[week] = Week(
+                    entries=[SimplifiedEntry(entry) for entry in result],
+                    total=sum(
+                        [entry.hours for entry in result if entry.hours is not None]
+                    ),
+                )
 
     month_total = sum([week.total for week in weeks.values()])
     month_name = format_date(first_day, format="MMMM", locale="nb_NO")
     print(f"[green]Total {month_name}:[/green] {month_total}h")
-    if report:
+
+    if not no_out:
         env = Environment(loader=FileSystemLoader(Path(__file__).parent))
         template = env.get_template("report.html")
         html_out = template.render(
@@ -346,8 +372,9 @@ def report(month: int, include_future: bool, report: Path | None):
                 "total": month_total,
             }
         )
-        HTML(string=html_out).write_pdf(report)
+        HTML(string=html_out).write_pdf(out)
+        print(f"[green]Report saved to {out}[/green]")
 
 
 if __name__ == "__main__":
-    timesheet(week=datetime.today().isocalendar().week)
+    timesheet(week=2)

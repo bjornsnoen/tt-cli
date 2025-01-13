@@ -29,8 +29,14 @@ class TimeSpan:
             raise StopIteration
 
 
-def get_week_span(week: int) -> TimeSpan:
-    year = date.today().year
+def get_week_span(week: int, year=date.today().year) -> TimeSpan:
+    first_day_of_year = datetime(year, 1, 1)
+    if (first_day_of_year.weekday() != 0):
+        # If the first day of the year is not a Monday, we need to adjust the week number
+        # because strptime will interpret week 1 as week 0 in that case
+        # There is no way to make strptime interpret week 1 as week 1 if the first day of the year is not a Monday
+        week -= 1
+
     start_datetime = datetime.strptime(f"{year}-W{week}-1", "%Y-W%W-%w").date()
     end_datetime = start_datetime + timedelta(days=6)
 
