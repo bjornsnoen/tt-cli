@@ -20,6 +20,7 @@ jobs:
         uses: JRubics/poetry-publish@v1.11
         with:
           poetry_version: "==1.6.1"
+          python_version: "3.13.1"
           repository_name: brbcoffee
           repository_url: https://pypi.brbcoffee.com/
           repository_username: ${{ secrets.BRBCOFFEE_PYPI_USERNAME }}
