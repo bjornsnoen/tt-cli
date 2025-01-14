@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.3-labs
 
 
-FROM python:3.10-alpine as auth
+FROM python:3.13-alpine as auth
 
 RUN apk add curl gcc libc-dev && curl -sSL https://install.python-poetry.org | python3 -
 
