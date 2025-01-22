@@ -22,7 +22,7 @@ from ttcli.config.config import (
     write_config,
 )
 from ttcli.output import print
-from ttcli.utils import get_month_span, get_week_number
+from ttcli.utils import get_month_span, get_week_number, get_week_span
 
 SEVERA_USERNAME_KEY = "SEVERA_USERNAME"
 SEVERA_PASSWORD_KEY = "SEVERA_PASSWORD"
@@ -207,9 +207,7 @@ class Severa(ApiClient):
         return all(k in environ for k in (SEVERA_USERNAME_KEY, SEVERA_PASSWORD_KEY))
 
     def get_logged_during_week(self, week: int):
-        year = date.today().year
-        starting_datetime = datetime.strptime(f"{year}-W{week}-1", "%Y-W%W-%w")
-        ending_datetime = starting_datetime + timedelta(days=6)
+        starting_datetime, ending_datetime = get_week_span(week)
 
         return loads(
             self.api_get(

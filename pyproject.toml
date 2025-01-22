@@ -1,10 +1,19 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.uv.index]]
+name = "brbcoffee"
+url = "https://pypi.brbcoffee.com/"
+publish-url = "https://pypi.brbcoffee.com/"
+
 [tool.poetry]
 name = "ttcli"
-version = "3.0.0"
+version = "3.0.4"
 description = "Time tracking tool for the cli"
 readme = "README.md"
-authors = ["Bjørn Snoen <bjorn@fink.no>"]
-include = ["alembic.ini"]
+authors = ["Bjørn Snoen <bjorn@snoen.io>"]
+include = [{path = "alembic.ini", format = ["sdist", "wheel"]}]
 packages = [{include = "ttcli"}]
 
 
