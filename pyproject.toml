@@ -1,3 +1,10 @@
+[project]
+name = "ttcli"
+version = "3.0.5"
+description = "Time tracking tool for the cli"
+readme = "README.md"
+requires-python = "~=3.13"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -9,7 +16,7 @@ publish-url = "https://pypi.brbcoffee.com/"
 
 [tool.poetry]
 name = "ttcli"
-version = "3.0.4"
+version = "3.0.5"
 description = "Time tracking tool for the cli"
 readme = "README.md"
 authors = ["Bjørn Snoen <bjorn@snoen.io>"]
@@ -41,7 +48,7 @@ SQLAlchemy-Utils = "^0.38.3"
 cryptography = "^37.0.4"
 keyring = "^23.7.0"
 humps = "^0.2.2"
-weasyprint = "^60.0"
+weasyprint = "^63.0"
 jinja2 = "^3.1.2"
 babel = "^2.12.1"
 
